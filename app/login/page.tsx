@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -18,35 +19,92 @@ export default function LoginPage() {
   };
 
   const handleLogin = async (e: React.FormEvent) => {
+    // 1. Prevent default to stop page reload
     e.preventDefault();
+    console.log("🚀 [LOGIN] Login Started...");
+    
     setError("");
     setLoading(true);
 
     try {
+      // Check if Supabase is configured
+      if (!supabase) {
+        console.error("❌ [LOGIN] Supabase client is NULL!");
+        setError("خطأ في الاتصال بالخادم. يرجى التحقق من إعدادات البيئة.");
+        setLoading(false);
+        return;
+      }
+      console.log("✅ [LOGIN] Supabase client exists");
+
       if (!mobile || !password) {
+        console.log("❌ [LOGIN] Missing fields");
         setError("يرجى ملء جميع الحقول");
         setLoading(false);
         return;
       }
 
       const email = mobileToEmail(mobile);
+      console.log("📧 [LOGIN] Email:", email);
 
-      const { error: signInError } = await supabase!.auth.signInWithPassword({
+      console.log("⏳ [LOGIN] Attempting sign in...");
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
+      console.log("📬 [LOGIN] Response received:");
+      console.log("   - Error:", signInError?.message || "none");
+      console.log("   - Data:", data ? "exists" : "none");
+      console.log("   - Session:", data?.session ? "exists" : "none");
+
       if (signInError) {
-        setError("بيانات الدخول غير صحيحة");
+        console.log("❌ [LOGIN] Sign in failed:", signInError.message);
+        setError(getErrorMessage(signInError.message));
         setLoading(false);
         return;
       }
 
+      // Handle case where error is null but session is missing
+      if (!data.session) {
+        console.warn("⚠️ [LOGIN] No session returned - possible unconfirmed email");
+        setError("يرجى التحقق من بريدك الإلكتروني لتأكيد الحساب");
+        setLoading(false);
+        return;
+      }
+
+      console.log("✅ [LOGIN] Login Success!");
+      console.log("🔄 [LOGIN] Redirecting...");
+
+      // Explicitly call router.push and router.refresh
       router.push("/");
+      router.refresh();
+      
+      // Force a complete page reload to ensure middleware sees the session
+      window.location.reload();
+      
     } catch (err: any) {
+      console.error("💥 [LOGIN] CRASHED:", err);
       setError(err.message || "حدث خطأ غير متوقع. يرجى المحاولة لاحقاً.");
       setLoading(false);
     }
+  };
+
+  // Helper to get Arabic error messages
+  const getErrorMessage = (message: string): string => {
+    const lowerMessage = message.toLowerCase();
+    if (lowerMessage.includes("invalid login") || lowerMessage.includes("invalid credentials")) {
+      return "بيانات الدخول غير صحيحة";
+    }
+    if (lowerMessage.includes("user not found")) {
+      return "المستخدم غير موجود";
+    }
+    if (lowerMessage.includes("email not confirmed")) {
+      return "يرجى التحقق من بريدك الإلكتروني لتأكيد الحساب";
+    }
+    if (lowerMessage.includes("too many requests")) {
+      return "تجاوزت عدد المحاولات. يرجى المحاولة لاحقاً";
+    }
+    return "بيانات الدخول غير صحيحة";
   };
 
   return (
