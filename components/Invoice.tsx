@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { useStore } from '@/hooks/use-store'
+import { STORE_CONFIG } from '@/config/app.config'
 
 interface InvoiceItem {
   name: string
@@ -39,16 +40,13 @@ function formatInvoiceDate(dateString?: string): { date: string; dayName: string
   const month = String(now.getMonth() + 1).padStart(2, '0')
   const year = now.getFullYear()
   
-  let hours = now.getHours()
+  const hours = String(now.getHours()).padStart(2, '0')
   const minutes = String(now.getMinutes()).padStart(2, '0')
-  const ampm = hours >= 12 ? 'م' : 'ص'
-  hours = hours % 12
-  hours = hours ? hours : 12
   
   return {
     date: `${day}/${month}/${year}`,
     dayName: dayNames[dayIndex] || '',
-    time: `${hours}:${minutes} ${ampm}`
+    time: `${hours}:${minutes}`
   }
 }
 
@@ -88,7 +86,7 @@ export default function Invoice({
   const remainingBalance = Math.max(0, total - amountPaid)
 
   // Use props or fallback to store
-  const storeName = globalStore.name || 'متجر الدهانات'
+  const storeName = globalStore.name || STORE_CONFIG.stores.find(s => s.id === STORE_CONFIG.defaultStore)?.name || 'متجر الدهانات'
   const storeAddress = globalStore.address || ''
   const storePhone = globalStore.phone || ''
 
@@ -129,9 +127,8 @@ export default function Invoice({
         
         {/* ==================== TOP RIGHT: Date & Time ==================== */}
         <div className="text-left mb-3 text-xs" style={{ fontSize: '10px' }}>
-          <p className="text-slate-600">{formattedDate}</p>
+          <p className="text-slate-600">{formattedDate} - {time}</p>
           <p className="text-slate-600">{dayName}</p>
-          <p className="text-slate-600">{time}</p>
         </div>
 
         {/* ==================== CENTER: Store Info ==================== */}
