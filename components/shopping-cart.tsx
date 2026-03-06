@@ -319,8 +319,6 @@ export function ShoppingCart({
           change_amount: changeAmount,
           remaining_amount: remaining,
           customer_id: selectedCustomer?.id || null,
-          customer_name: selectedCustomer?.name || null,
-          customer_phone: selectedCustomer?.phone || null,
           items: saleItems,
           sale_date: new Date().toISOString(),
           store_id: profile.store_id,
