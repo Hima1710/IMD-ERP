@@ -94,6 +94,58 @@ export default function POSPage() {
       }
 
       console.log('📥 Fetching products for user:', user.email)
+
+      // Get store_id from profiles table
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('store_id')
+        .eq('id', user.id)
+        .single()
+
+      if (!profile?.store_id) {
+        console.log('No store linked to this user')
+        alert('لا يوجد متجر مرتبط بهذا المستخدم')
+        setProducts([])
+        setLoading(false)
+        return
+      }
+
+      // Fetch products for this store only
+      const { data, error: fetchError } = await supabase
+        .from('products')
+        .select('*')
+        .eq('store_id', profile.store_id)
+        .order('created_at', { ascending: false })
+
+      if (fetchError) {
+        console.error('Error fetching products:', fetchError)
+        setError(fetchError.message)
+        setProducts([])
+        return
+      }
+
+      // Map Supabase data to Product type
+      const mappedProducts: Product[] = (data || []).map((item: any) => ({
+        id: item.id,
+        name: item.name || '',
+        category: item.category || '',
+        unit: item.unit || 'قطعة',
+        price_buy: parseFloat(item.price_buy) || 0,
+        price_sell: parseFloat(item.price_sell) || 0,
+        stock_quantity: parseInt(item.stock_quantity) || 0,
+        min_stock_level: parseInt(item.min_stock_level) || 0,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+      }))
+
+      console.log('Fetched products:', mappedProducts)
+      setProducts(mappedProducts)
+    } catch (err) {
+      console.error('Error fetching products:', err)
+      setError(err instanceof Error ? err.message : 'Unknown error')
+      setProducts([])
+    } finally {
+      setLoading(false)
     }
   }
 
