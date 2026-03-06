@@ -1,5 +1,5 @@
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { createBrowserClient } from '@supabase/ssr'
 
 // ============================================================
 // Supabase Client - Next.js 16 + Turbopack with proper SSR
@@ -12,7 +12,7 @@ console.log('🔍 [SUPABASE] Loading configuration...')
 console.log('🔍 [SUPABASE] URL:', supabaseUrl || '✗ MISSING')
 console.log('🔍 [SUPABASE] KEY:', supabaseAnonKey ? '✓ Found' : '✗ MISSING')
 
-function createSupabaseClient(): SupabaseClient | null {
+function createSupabaseClient() {
   if (!supabaseUrl || !supabaseAnonKey) {
     console.error('❌ Missing Supabase environment variables:', {
       url: supabaseUrl ? '✓' : '✗',
@@ -22,14 +22,7 @@ function createSupabaseClient(): SupabaseClient | null {
   }
   
   try {
-    const client = createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-        storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-      },
-    })
+    const client = createBrowserClient(supabaseUrl, supabaseAnonKey)
     console.log('✅ Supabase client created successfully!')
     return client
   } catch (error) {

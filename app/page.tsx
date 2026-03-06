@@ -34,16 +34,16 @@ export default function POSPage() {
 
         console.log('🔄 Checking session...')
         
-        // Try to get user with retries
+        // Try to get session with retries
         let user = null
         let retries = 0
         const maxRetries = 5
 
         while (!user && retries < maxRetries) {
-          const { data: { user: currentUser } } = await supabase.auth.getUser()
-          if (currentUser) {
-            user = currentUser
-            console.log('✅ Session found:', currentUser.email)
+          const { data: { session } } = await supabase.auth.getSession()
+          if (session?.user) {
+            user = session.user
+            console.log('✅ Session found:', session.user.email)
             break
           }
           retries++
@@ -84,14 +84,16 @@ export default function POSPage() {
         return
       }
 
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
+      // Get current session
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) {
         console.log('No user logged in')
         setProducts([])
         setLoading(false)
         return
       }
+
+      const user = session.user
 
       console.log('📥 Fetching products for user:', user.email)
 
