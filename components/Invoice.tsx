@@ -31,7 +31,16 @@ interface InvoiceProps {
 
 // Format date as DD/MM/YYYY and get day name in Arabic
 function formatInvoiceDate(dateString?: string): { date: string; dayName: string; time: string } {
-  const now = dateString ? new Date(dateString) : new Date()
+  // Safely parse date with fallback
+  let now: Date
+  try {
+    now = dateString ? new Date(dateString) : new Date()
+    if (isNaN(now.getTime())) {
+      throw new Error('Invalid date')
+    }
+  } catch {
+    now = new Date() // Fallback to current date
+  }
   
   const dayNames = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'Saturday']
   const dayIndex = now.getDay()
