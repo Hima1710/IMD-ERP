@@ -2,19 +2,16 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
 // ============================================================
-// BULLETPROOF Supabase Client - Next.js 16 + Turbopack
+// Supabase Client - Next.js 16 + Turbopack with proper SSR
 // ============================================================
 
-// Use bracket notation for safer access in Next.js 16 with Turbopack
 const supabaseUrl = process.env['NEXT_PUBLIC_SUPABASE_URL']
 const supabaseAnonKey = process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']
 
-// DEBUG: Log what's being loaded
 console.log('🔍 [SUPABASE] Loading configuration...')
 console.log('🔍 [SUPABASE] URL:', supabaseUrl || '✗ MISSING')
 console.log('🔍 [SUPABASE] KEY:', supabaseAnonKey ? '✓ Found' : '✗ MISSING')
 
-// Create a type-safe supabase client that handles missing env vars
 function createSupabaseClient(): SupabaseClient | null {
   if (!supabaseUrl || !supabaseAnonKey) {
     console.error('❌ Missing Supabase environment variables:', {
@@ -25,7 +22,14 @@ function createSupabaseClient(): SupabaseClient | null {
   }
   
   try {
-    const client = createClient(supabaseUrl, supabaseAnonKey)
+    const client = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+      },
+    })
     console.log('✅ Supabase client created successfully!')
     return client
   } catch (error) {
@@ -36,6 +40,5 @@ function createSupabaseClient(): SupabaseClient | null {
 
 export const supabase = createSupabaseClient()
 
-// Helper to check if Supabase is configured
 export const isSupabaseConfigured = () => supabase !== null
 

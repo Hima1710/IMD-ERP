@@ -83,6 +83,10 @@ export default function LoginPage() {
       console.log("🔄 [LOGIN] User ID:", data.user?.id);
       console.log("🔄 [LOGIN] User Email:", data.user?.email);
 
+      // Give session time to persist before redirecting
+      console.log("🔄 [LOGIN] Waiting for session to persist...");
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       // Force redirect using multiple methods to ensure it works
       console.log("🔄 [LOGIN] Redirecting to /...");
       
