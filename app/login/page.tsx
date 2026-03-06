@@ -1,9 +1,9 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { loginAction } from "@/app/actions/auth";
 import { Lock, Phone, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
@@ -19,7 +19,6 @@ export default function LoginPage() {
   };
 
   const handleLogin = async (e: React.FormEvent) => {
-    // 1. CRITICAL: Prevent default to stop page reload
     e.preventDefault();
     e.stopPropagation();
     
@@ -30,15 +29,6 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // Check if Supabase is configured
-      if (!supabase) {
-        console.error("❌ [LOGIN] Supabase client is NULL!");
-        setError("خطأ في الاتصال بالخادم. يرجى التحقق من إعدادات البيئة.");
-        setLoading(false);
-        return;
-      }
-      console.log("✅ [LOGIN] Supabase client exists");
-
       if (!mobile || !password) {
         console.log("❌ [LOGIN] Missing fields");
         setError("يرجى ملء جميع الحقول");
@@ -49,58 +39,30 @@ export default function LoginPage() {
       const email = mobileToEmail(mobile);
       console.log("📧 [LOGIN] Email:", email);
 
-      console.log("⏳ [LOGIN] Attempting sign in...");
+      console.log("⏳ [LOGIN] Attempting server-side login...");
       
-      // Sign in with Supabase
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      // Call server action to handle auth with cookies
+      const result = await loginAction(email, password);
 
-      console.log("📬 [LOGIN] Response received:");
-      console.log("   - Error:", signInError?.message || "none");
-      console.log("   - Data exists:", !!data);
-      console.log("   - Session:", data?.session ? "exists" : "none");
-      console.log("   - User:", data?.user?.email || "none");
-
-      // Handle error
-      if (signInError) {
-        console.log("❌ [LOGIN] Sign in failed:", signInError.message);
-        setError(getErrorMessage(signInError.message));
-        setLoading(false);
-        return;
-      }
-
-      // Handle case where error is null but session is missing
-      if (!data.session) {
-        console.warn("⚠️ [LOGIN] No session returned - possible unconfirmed email");
-        setError("يرجى التحقق من بريدك الإلكتروني لتأكيد الحساب");
+      if (!result.success) {
+        console.log("❌ [LOGIN] Login failed:", result.error);
+        setError(getErrorMessage(result.error || "Login failed"));
         setLoading(false);
         return;
       }
 
       console.log("✅ [LOGIN] Login Success!");
-      console.log("🔄 [LOGIN] User ID:", data.user?.id);
-      console.log("🔄 [LOGIN] User Email:", data.user?.email);
-
-      // Give session time to persist before redirecting
-      console.log("🔄 [LOGIN] Waiting for session to persist...");
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Force redirect using multiple methods to ensure it works
+      console.log("🔄 [LOGIN] User:", result.user?.email);
       console.log("🔄 [LOGIN] Redirecting to /...");
       
-      // Method 1: Use window.location for a complete page load (most reliable)
-      window.location.href = "/";
+      // Redirect to home - middleware will see the session in cookies
+      router.push("/");
       
     } catch (err: any) {
       console.error("💥 [LOGIN] CRASHED:", err);
       setError(err.message || "حدث خطأ غير متوقع. يرجى المحاولة لاحقاً.");
       setLoading(false);
     }
-    
-    // This line should NOT be reached if redirect works
-    console.log("⚠️ [LOGIN] Function completed without redirect");
   };
 
   // Helper to get Arabic error messages
