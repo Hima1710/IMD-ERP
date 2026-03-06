@@ -75,9 +75,29 @@ export default function SettingsPage() {
       setSaving(true)
       setMessage(null)
 
+      console.log('💾 [SETTINGS] Saving profile with shop_name:', store.name)
+
+      // Save to profiles table (this is what the app reads from)
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert(
+          {
+            id: userId,
+            phone: store.phone,
+            shop_name: store.name,
+          },
+          { onConflict: 'id' }
+        )
+
+      if (profileError) {
+        throw profileError
+      }
+
+      console.log('✅ [SETTINGS] Profile saved successfully')
+
+      // Also save to stores table for backward compatibility (if it exists)
       if (store.id) {
-        // Update existing store
-        const { error: updateError } = await supabase
+        const { error: storeError } = await supabase
           .from('stores')
           .update({
             name: store.name,
@@ -87,12 +107,11 @@ export default function SettingsPage() {
           })
           .eq('id', store.id)
 
-        if (updateError) {
-          throw updateError
+        if (storeError) {
+          console.warn('⚠️ [SETTINGS] Warning updating stores table:', storeError.message)
         }
       } else {
-        // Create new store
-        const { data: newStore, error: insertError } = await supabase
+        const { data: newStore, error: storeError } = await supabase
           .from('stores')
           .insert({
             user_id: userId,
@@ -104,8 +123,8 @@ export default function SettingsPage() {
           .select()
           .single()
 
-        if (insertError) {
-          throw insertError
+        if (storeError) {
+          console.warn('⚠️ [SETTINGS] Warning creating stores table:', storeError.message)
         }
 
         if (newStore) {
@@ -121,7 +140,7 @@ export default function SettingsPage() {
       // Clear message after 3 seconds
       setTimeout(() => setMessage(null), 3000)
     } catch (error: any) {
-      console.error('Error saving:', error)
+      console.error('❌ [SETTINGS] Error saving:', error)
       setMessage({ type: 'error', text: error.message || 'خطأ في حفظ الإعدادات' })
     } finally {
       setSaving(false)

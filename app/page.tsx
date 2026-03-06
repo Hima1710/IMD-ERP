@@ -34,10 +34,10 @@ export default function POSPage() {
 
         console.log('🔄 Checking session...')
         
-        // Try to get session with retries
+        // Try to get session with longer retries and delays
         let user = null
         let retries = 0
-        const maxRetries = 5
+        const maxRetries = 10
 
         while (!user && retries < maxRetries) {
           const { data: { session } } = await supabase.auth.getSession()
@@ -49,14 +49,18 @@ export default function POSPage() {
           retries++
           if (retries < maxRetries) {
             console.log(`⏳ Session not ready yet... retry ${retries}/${maxRetries}`)
-            await new Promise(resolve => setTimeout(resolve, 300))
+            // Increase delay for later retries
+            const delay = Math.min(retries * 200, 1000)
+            await new Promise(resolve => setTimeout(resolve, delay))
           }
         }
 
         if (!user) {
-          console.log('❌ No user session after retries')
+          console.log('❌ No user session after retries - redirecting to login')
           setLoading(false)
           setIsReady(false)
+          // Session not found after all retries - redirect to login
+          window.location.href = '/login'
           return
         }
 

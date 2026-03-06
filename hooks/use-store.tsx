@@ -49,31 +49,56 @@ export function StoreProvider({ children }: StoreProviderProps) {
         return
       }
 
-      const userResponse = await supabase.auth.getUser()
-      const userData = userResponse?.data
-      
-      if (!userData?.user) {
+      // Try to get user with retries
+      let user = null
+      let retries = 0
+      const maxRetries = 5
+
+      while (!user && retries < maxRetries) {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user) {
+          user = session.user
+          break
+        }
+        retries++
+        if (retries < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, 200))
+        }
+      }
+
+      if (!user) {
+        console.log('useStore: No user session found')
         setLoading(false)
         return
       }
 
-      const { data: storeData } = await supabase
-        .from('stores')
-        .select('*')
-        .eq('user_id', userData.user.id)
-        .maybeSingle()
+      console.log('📥 [STORE] Fetching profile for user:', user.id)
 
-      if (storeData) {
+      // Fetch from profiles table to get shop_name
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('phone, shop_name')
+        .eq('id', user.id)
+        .single()
+
+      if (profileError) {
+        console.warn('⚠️ [STORE] Profile not found, using defaults:', profileError.message)
+        // Still set loading to false, will use defaults
+        setLoading(false)
+        return
+      }
+
+      if (profileData) {
+        console.log('✅ [STORE] Profile fetched:', profileData)
         setStore({
-          id: storeData.id,
-          name: storeData.name || '',
-          phone: storeData.phone || '',
-          address: storeData.address || '',
-          logo_url: storeData.logo_url || '',
+          name: profileData.shop_name || '',
+          phone: profileData.phone || '',
+          address: '',
+          logo_url: '',
         })
       }
     } catch (error) {
-      console.error('Error fetching store:', error)
+      console.error('❌ [STORE] Error fetching store:', error)
     } finally {
       setLoading(false)
     }
