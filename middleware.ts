@@ -41,21 +41,21 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  // Allow public routes
+  // Public routes that don't require authentication
   const publicRoutes = ['/login', '/auth', '/api/auth']
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route))
 
-  // Protected routes - redirect to login if no session
-  if (!user && !isPublicRoute && pathname !== '/login') {
-    console.log("🔐 [MIDDLEWARE] Redirecting unauthenticated user to /login")
+  // Rule 1: User NOT logged in → send to login page
+  if (!user && !isPublicRoute) {
+    console.log("🔐 [MIDDLEWARE] Unauthenticated user trying to access protected route:", pathname)
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 
-  // If user is logged in and tries to access login page, redirect to home
+  // Rule 2: User IS logged in and tries to access login → redirect to dashboard
   if (user && pathname === '/login') {
-    console.log("🔐 [MIDDLEWARE] User already logged in, redirecting to /")
+    console.log("🔐 [MIDDLEWARE] Authenticated user trying to access login, redirecting to /")
     const url = request.nextUrl.clone()
     url.pathname = '/'
     return NextResponse.redirect(url)
