@@ -20,10 +20,56 @@ export default function POSPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isReady, setIsReady] = useState(false)
 
-  // Fetch products from Supabase (only for current store)
+  // Wait for session to be available, then fetch products
   useEffect(() => {
-    fetchProducts()
+    const initializeSession = async () => {
+      try {
+        if (!supabase) {
+          console.log('❌ Supabase not configured')
+          setLoading(false)
+          return
+        }
+
+        console.log('🔄 Checking session...')
+        
+        // Try to get user with retries
+        let user = null
+        let retries = 0
+        const maxRetries = 5
+
+        while (!user && retries < maxRetries) {
+          const { data: { user: currentUser } } = await supabase.auth.getUser()
+          if (currentUser) {
+            user = currentUser
+            console.log('✅ Session found:', currentUser.email)
+            break
+          }
+          retries++
+          if (retries < maxRetries) {
+            console.log(`⏳ Session not ready yet... retry ${retries}/${maxRetries}`)
+            await new Promise(resolve => setTimeout(resolve, 300))
+          }
+        }
+
+        if (!user) {
+          console.log('❌ No user session after retries')
+          setLoading(false)
+          setIsReady(false)
+          return
+        }
+
+        setIsReady(true)
+        await fetchProducts()
+      } catch (err) {
+        console.error('❌ Session initialization error:', err)
+        setLoading(false)
+        setError('Failed to initialize session')
+      }
+    }
+
+    initializeSession()
   }, [])
 
   const fetchProducts = async () => {
@@ -47,57 +93,7 @@ export default function POSPage() {
         return
       }
 
-      // Get store_id from profiles table
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('store_id')
-        .eq('id', user.id)
-        .single()
-
-      if (!profile?.store_id) {
-        console.log('No store linked to this user')
-        alert('لا يوجد متجر مرتبط بهذا المستخدم')
-        setProducts([])
-        setLoading(false)
-        return
-      }
-
-      // Fetch products for this store only
-      const { data, error: fetchError } = await supabase
-        .from('products')
-        .select('*')
-        .eq('store_id', profile.store_id)
-        .order('created_at', { ascending: false })
-
-      if (fetchError) {
-        console.error('Error fetching products:', fetchError)
-        setError(fetchError.message)
-        setProducts([])
-        return
-      }
-
-      // Map Supabase data to Product type using CORRECT column names
-      const mappedProducts: Product[] = (data || []).map((item: any) => ({
-        id: item.id,
-        name: item.name || '',
-        category: item.category || '',
-        unit: item.unit || 'قطعة',
-        price_buy: parseFloat(item.price_buy) || 0,
-        price_sell: parseFloat(item.price_sell) || 0,
-        stock_quantity: parseInt(item.stock_quantity) || 0,
-        min_stock_level: parseInt(item.min_stock_level) || 0,
-        created_at: item.created_at,
-        updated_at: item.updated_at,
-      }))
-
-      console.log('Fetched products:', mappedProducts)
-      setProducts(mappedProducts)
-    } catch (err) {
-      console.error('Error fetching products:', err)
-      setError(err instanceof Error ? err.message : 'Unknown error')
-      setProducts([])
-    } finally {
-      setLoading(false)
+      console.log('📥 Fetching products for user:', user.email)
     }
   }
 
@@ -235,50 +231,67 @@ export default function POSPage() {
 
   return (
     <div className="flex h-screen bg-slate-50 text-slate-900 overflow-hidden">
-      {/* Sidebar - Right side for RTL */}
-      <Sidebar selectedStore={selectedStore} onStoreChange={setSelectedStore} />
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <POSHeader
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          selectedStore={selectedStore}
-        />
-
-        {/* Dashboard Stats */}
-        <div className="px-6 py-4 bg-slate-50">
-          <DashboardStats stats={stats} />
-        </div>
-
-        {/* Main Content Area */}
-        <div className="flex-1 flex overflow-hidden">
-          {/* Left side: Shopping Cart */}
-          <div className="w-80 border-r border-slate-200 bg-white overflow-y-auto">
-            <ShoppingCart
-              cartItems={cartItems}
-              allProducts={productsForDisplay}
-              onUpdateQuantity={handleUpdateQuantity}
-              taxRate={taxRate}
-              discountPercent={discountPercent}
-              onDiscountChange={setDiscountPercent}
-            />
-          </div>
-
-          {/* Right side: Product Catalog */}
-          <div className="flex-1 overflow-y-auto p-6">
-            <ProductCatalog
-              products={filteredProducts}
-              selectedCategory={selectedCategory}
-              onCategoryChange={setSelectedCategory}
-              onAddToCart={handleAddToCart}
-              onAddProduct={addProduct}
-              loading={loading}
-            />
+      {!isReady ? (
+        // Loading screen while session initializes
+        <div className="w-full h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900">
+          <div className="text-center">
+            <div className="mb-8">
+              <div className="inline-block">
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-400 border-t-blue-600"></div>
+              </div>
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-2">جاري تحميل النظام</h2>
+            <p className="text-blue-300">يرجى الانتظار...</p>
           </div>
         </div>
-      </div>
+      ) : (
+        <>
+          {/* Sidebar - Right side for RTL */}
+          <Sidebar selectedStore={selectedStore} onStoreChange={setSelectedStore} />
+
+          {/* Main Content */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {/* Header */}
+            <POSHeader
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              selectedStore={selectedStore}
+            />
+
+            {/* Dashboard Stats */}
+            <div className="px-6 py-4 bg-slate-50">
+              <DashboardStats stats={stats} />
+            </div>
+
+            {/* Main Content Area */}
+            <div className="flex-1 flex overflow-hidden">
+              {/* Left side: Shopping Cart */}
+              <div className="w-80 border-r border-slate-200 bg-white overflow-y-auto">
+                <ShoppingCart
+                  cartItems={cartItems}
+                  allProducts={productsForDisplay}
+                  onUpdateQuantity={handleUpdateQuantity}
+                  taxRate={taxRate}
+                  discountPercent={discountPercent}
+                  onDiscountChange={setDiscountPercent}
+                />
+              </div>
+
+              {/* Right side: Product Catalog */}
+              <div className="flex-1 overflow-y-auto p-6">
+                <ProductCatalog
+                  products={filteredProducts}
+                  selectedCategory={selectedCategory}
+                  onCategoryChange={setSelectedCategory}
+                  onAddToCart={handleAddToCart}
+                  onAddProduct={addProduct}
+                  loading={loading}
+                />
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }
