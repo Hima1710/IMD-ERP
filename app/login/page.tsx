@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Lock, Phone, Loader2 } from "lucide-react";
@@ -19,9 +19,12 @@ export default function LoginPage() {
   };
 
   const handleLogin = async (e: React.FormEvent) => {
-    // 1. Prevent default to stop page reload
+    // 1. CRITICAL: Prevent default to stop page reload
     e.preventDefault();
+    e.stopPropagation();
+    
     console.log("🚀 [LOGIN] Login Started...");
+    console.log("📱 [LOGIN] Mobile:", mobile);
     
     setError("");
     setLoading(true);
@@ -47,6 +50,8 @@ export default function LoginPage() {
       console.log("📧 [LOGIN] Email:", email);
 
       console.log("⏳ [LOGIN] Attempting sign in...");
+      
+      // Sign in with Supabase
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -54,9 +59,11 @@ export default function LoginPage() {
 
       console.log("📬 [LOGIN] Response received:");
       console.log("   - Error:", signInError?.message || "none");
-      console.log("   - Data:", data ? "exists" : "none");
+      console.log("   - Data exists:", !!data);
       console.log("   - Session:", data?.session ? "exists" : "none");
+      console.log("   - User:", data?.user?.email || "none");
 
+      // Handle error
       if (signInError) {
         console.log("❌ [LOGIN] Sign in failed:", signInError.message);
         setError(getErrorMessage(signInError.message));
@@ -73,20 +80,23 @@ export default function LoginPage() {
       }
 
       console.log("✅ [LOGIN] Login Success!");
-      console.log("🔄 [LOGIN] Redirecting...");
+      console.log("🔄 [LOGIN] User ID:", data.user?.id);
+      console.log("🔄 [LOGIN] User Email:", data.user?.email);
 
-      // Explicitly call router.push and router.refresh
-      router.push("/");
-      router.refresh();
+      // Force redirect using multiple methods to ensure it works
+      console.log("🔄 [LOGIN] Redirecting to /...");
       
-      // Force a complete page reload to ensure middleware sees the session
-      window.location.reload();
+      // Method 1: Use window.location for a complete page load (most reliable)
+      window.location.href = "/";
       
     } catch (err: any) {
       console.error("💥 [LOGIN] CRASHED:", err);
       setError(err.message || "حدث خطأ غير متوقع. يرجى المحاولة لاحقاً.");
       setLoading(false);
     }
+    
+    // This line should NOT be reached if redirect works
+    console.log("⚠️ [LOGIN] Function completed without redirect");
   };
 
   // Helper to get Arabic error messages
@@ -109,14 +119,13 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex" dir="rtl">
-      {/* Left Side - Image (hidden on mobile, visible on lg+) */}
+      {/* Left Side - Image */}
       <div 
         className="hidden lg:block lg:w-1/2 h-screen bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage: `url('/WhatsApp Image 2026-03-05 at 1.04.54 AM.jpeg')`
         }}
       >
-        {/* Overlay for better image visibility */}
         <div className="w-full h-full bg-black/20 flex items-center justify-center">
           <div className="text-center p-8">
             <h2 className="text-4xl font-bold text-white mb-4">IMD ERP</h2>
@@ -125,17 +134,15 @@ export default function LoginPage() {
         </div>
       </div>
 
-{/* Right Side - Form */}
+      {/* Right Side - Form */}
       <div className="w-full lg:w-1/2 h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900 p-6">
         <div className="w-full max-w-md">
-          {/* Header - Branding */}
+          {/* Header */}
           <div className="text-center mb-8">
-            {/* Mobile Logo - only show on small screens */}
             <div className="lg:hidden mb-6">
               <h1 className="text-3xl font-bold text-white mb-1">IMD ERP</h1>
               <p className="text-blue-300 text-sm">نظام إدارة مستودعات الدهانات</p>
             </div>
-            {/* Desktop branding - shown below form on large screens */}
             <h1 className="text-4xl font-bold text-white mb-2 tracking-wide hidden lg:block">IMD ERP</h1>
             <p className="text-blue-300 text-sm font-light italic hidden lg:block">By Eng. Ibrahim Mabrouk El-Deeb</p>
           </div>
@@ -153,8 +160,8 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* Form */}
-          <form onSubmit={handleLogin} className="space-y-5">
+          {/* Form - Using onClick on button instead of onSubmit on form */}
+          <div className="space-y-5">
             {/* Mobile Number Input */}
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
@@ -192,9 +199,10 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Login Button */}
+            {/* Login Button - Using onClick instead of form onSubmit */}
             <button
-              type="submit"
+              type="button"
+              onClick={handleLogin}
               disabled={loading}
               className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 disabled:from-slate-600 disabled:to-slate-500 text-white font-semibold py-3.5 rounded-xl transition duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-600/25"
             >
@@ -207,14 +215,13 @@ export default function LoginPage() {
                 "دخول"
               )}
             </button>
-          </form>
+          </div>
 
           {/* Footer */}
           <div className="mt-8 text-center text-slate-400 text-sm">
             <p>هل تحتاج إلى حساب؟ <a href="https://wa.me/201558905021" target="_blank" rel="noopener noreferrer" className="text-blue-400 font-medium hover:text-blue-300 hover:underline">تواصل مع المسؤول</a></p>
           </div>
 
-          {/* Mobile Branding - Bottom */}
           <div className="lg:hidden mt-8 text-center">
             <p className="text-slate-500 text-xs italic">By Eng. Ibrahim Mabrouk El-Deeb</p>
           </div>
