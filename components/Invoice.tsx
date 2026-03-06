@@ -95,7 +95,7 @@ export default function Invoice({
   const remainingBalance = Math.max(0, total - amountPaid)
 
   // Use props or fallback to store
-  const storeName = globalStore.name || STORE_CONFIG.stores.find(s => s.id === STORE_CONFIG.defaultStore)?.name || 'متجر الدهانات'
+  const storeName = globalStore.name || globalStore.phone || 'متجر الدهانات'
   const storeAddress = globalStore.address || ''
   const storePhone = globalStore.phone || ''
 
