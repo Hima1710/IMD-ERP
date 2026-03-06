@@ -383,20 +383,10 @@ export default function POSPage() {
                 { name: 'دهان داخلي', quantity: 2, price: 100, total: 200 },
                 { name: 'فرشاة', quantity: 1, price: 50, total: 50 }
               ]}
-              subtotal={250}
-              discountAmount={0}
-              total={250}
-              paymentMethod="cash"
-              amountPaid={250}
-              changeAmount={0}
-              date={new Date().toISOString()}
+              shopName="متجر الدهانات الرئيسي"
               invoiceId="INV-001"
               cashierName={cashierPhone}
-              customerName="أحمد محمد"
-              customerPhone="01234567890"
-              storeName="متجر الدهانات الرئيسي"
-              storeAddress="الرياض، السعودية"
-              storePhone="01123456789"
+              totalAmount={250}
             />
           </div>
         </div>

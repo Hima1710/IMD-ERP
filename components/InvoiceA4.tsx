@@ -11,68 +11,32 @@ interface InvoiceItem {
 
 interface InvoiceA4Props {
   items: InvoiceItem[]
-  subtotal: number
-  discountAmount: number
-  total: number
-  paymentMethod: 'cash' | 'card'
-  amountPaid: number
-  changeAmount: number
-  date?: string
-  invoiceId?: string
-  cashierName?: string
-  customerName?: string
-  customerPhone?: string
-  storeName?: string
-  storeAddress?: string
-  storePhone?: string
+  shopName: string
+  invoiceId: string
+  cashierName: string
+  totalAmount: number
 }
 
 // Safe date formatting function
-function formatInvoiceDate(dateString?: string): string {
-  try {
-    const date = dateString ? new Date(dateString) : new Date()
-    if (isNaN(date.getTime())) {
-      throw new Error('Invalid date')
-    }
-    return date.toLocaleString('ar-EG', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    })
-  } catch {
-    return new Date().toLocaleString('ar-EG', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    })
-  }
+function formatInvoiceDate(): string {
+  return new Date().toLocaleString('ar-EG', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  })
 }
 
 export default function InvoiceA4({
   items,
-  subtotal,
-  discountAmount,
-  total,
-  paymentMethod,
-  amountPaid,
-  changeAmount,
-  date,
+  shopName,
   invoiceId,
   cashierName,
-  customerName,
-  customerPhone,
-  storeName = 'متجر الدهانات',
-  storeAddress = '',
-  storePhone = '',
+  totalAmount,
 }: InvoiceA4Props) {
-  const formattedDate = formatInvoiceDate(date)
-  const finalInvoiceId = invoiceId || `INV-${Date.now()}`
+  const formattedDate = formatInvoiceDate()
 
   return (
     <>
@@ -83,11 +47,18 @@ export default function InvoiceA4({
           }
           body {
             background: white !important;
+            margin: 0;
+            padding: 0;
           }
           .invoice-a4 {
             background: white !important;
             -webkit-print-color-adjust: exact;
             color-adjust: exact;
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0;
+            padding: 20mm;
+            box-shadow: none;
           }
         }
       `}</style>
@@ -97,101 +68,95 @@ export default function InvoiceA4({
         minHeight: '297mm',
         padding: '20mm',
         fontFamily: 'Cairo, Tajawal, Tahoma, Arial, sans-serif',
-        direction: 'rtl'
+        direction: 'rtl',
+        fontSize: '14px',
+        lineHeight: '1.5'
       }}>
 
         {/* Header */}
-        <div className="text-center mb-8 border-b-2 border-gray-300 pb-4">
-          <div className="mb-4">
-            {/* Logo Placeholder */}
-            <div className="w-20 h-20 bg-gray-200 mx-auto rounded-lg flex items-center justify-center">
-              <span className="text-gray-500 text-sm">شعار الشركة</span>
+        <div className="mb-8">
+          {/* Top Section */}
+          <div className="flex justify-between items-start mb-4">
+            {/* Top Right: Invoice Title and Number */}
+            <div className="text-right">
+              <h1 className="text-2xl font-bold text-gray-800 mb-1">فاتورة بيع</h1>
+              <p className="text-gray-600">رقم الفاتورة: {invoiceId}</p>
+            </div>
+            {/* Top Left: Date & Time */}
+            <div className="text-left">
+              <p className="text-gray-600">التاريخ والوقت</p>
+              <p className="font-semibold">{formattedDate}</p>
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">{storeName}</h1>
-          {storeAddress && <p className="text-gray-600">{storeAddress}</p>}
-          {storePhone && <p className="text-gray-600">هاتف: {storePhone}</p>}
-        </div>
 
-        {/* Invoice Info */}
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h2 className="text-xl font-bold text-gray-800">فاتورة مبيعات</h2>
-            <p className="text-gray-600">رقم الفاتورة: {finalInvoiceId}</p>
+          {/* Center: Shop Name */}
+          <div className="text-center mb-4">
+            <h2 className="text-3xl font-bold text-gray-900 border-b-2 border-gray-300 pb-2">{shopName}</h2>
           </div>
-          <div className="text-left">
-            <p className="text-gray-600">التاريخ: {formattedDate}</p>
-            {cashierName && <p className="text-gray-600">الكاشير: {cashierName}</p>}
-          </div>
-        </div>
 
-        {/* Customer Info */}
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-2">معلومات العميل</h3>
-          <p className="text-gray-600">الاسم: {customerName || 'عميل نقدي'}</p>
-          {customerPhone && <p className="text-gray-600">الهاتف: {customerPhone}</p>}
+          {/* Sub-Header: Cashier */}
+          <div className="text-center">
+            <p className="text-lg text-gray-700">المسؤول: <span className="font-semibold">{cashierName}</span></p>
+          </div>
         </div>
 
         {/* Items Table */}
-        <div className="mb-6">
-          <table className="w-full border-collapse border border-gray-300">
+        <div className="mb-8">
+          <table className="w-full border-collapse border border-gray-400">
             <thead>
               <tr className="bg-gray-100">
-                <th className="border border-gray-300 px-4 py-2 text-right">المنتج</th>
-                <th className="border border-gray-300 px-4 py-2 text-center">الكمية</th>
-                <th className="border border-gray-300 px-4 py-2 text-center">السعر</th>
-                <th className="border border-gray-300 px-4 py-2 text-center">الإجمالي</th>
+                <th className="border border-gray-400 px-3 py-2 text-center font-bold">#</th>
+                <th className="border border-gray-400 px-3 py-2 text-center font-bold">الصنف</th>
+                <th className="border border-gray-400 px-3 py-2 text-center font-bold">الكمية</th>
+                <th className="border border-gray-400 px-3 py-2 text-center font-bold">السعر</th>
+                <th className="border border-gray-400 px-3 py-2 text-center font-bold">الإجمالي</th>
               </tr>
             </thead>
             <tbody>
               {items.map((item, index) => (
-                <tr key={index}>
-                  <td className="border border-gray-300 px-4 py-2">{item.name}</td>
-                  <td className="border border-gray-300 px-4 py-2 text-center">{item.quantity}</td>
-                  <td className="border border-gray-300 px-4 py-2 text-center">{item.price.toFixed(2)} ج.م</td>
-                  <td className="border border-gray-300 px-4 py-2 text-center">{item.total.toFixed(2)} ج.م</td>
+                <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                  <td className="border border-gray-400 px-3 py-2 text-center">{index + 1}</td>
+                  <td className="border border-gray-400 px-3 py-2 text-right">{item.name}</td>
+                  <td className="border border-gray-400 px-3 py-2 text-center">{item.quantity}</td>
+                  <td className="border border-gray-400 px-3 py-2 text-center">{item.price.toFixed(2)} ج.م</td>
+                  <td className="border border-gray-400 px-3 py-2 text-center">{item.total.toFixed(2)} ج.م</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
 
-        {/* Totals */}
-        <div className="flex justify-end mb-6">
-          <div className="w-64">
-            <div className="flex justify-between py-2 border-b border-gray-300">
-              <span className="font-semibold">المجموع الفرعي:</span>
-              <span>{subtotal.toFixed(2)} ج.م</span>
-            </div>
-            {discountAmount > 0 && (
-              <div className="flex justify-between py-2 border-b border-gray-300">
-                <span className="font-semibold">الخصم:</span>
-                <span>-{discountAmount.toFixed(2)} ج.م</span>
+        {/* Footer */}
+        <div className="flex justify-between items-start">
+          {/* Left: Summary Box */}
+          <div className="border border-gray-400 p-4 bg-gray-50">
+            <h3 className="font-bold text-lg mb-2">ملخص الفاتورة</h3>
+            <div className="space-y-1">
+              <div className="flex justify-between">
+                <span>الإجمالي:</span>
+                <span className="font-semibold">{totalAmount.toFixed(2)} ج.م</span>
               </div>
-            )}
-            <div className="flex justify-between py-2 border-b-2 border-gray-300 font-bold text-lg">
-              <span>الإجمالي:</span>
-              <span>{total.toFixed(2)} ج.م</span>
-            </div>
-            <div className="flex justify-between py-2">
-              <span className="font-semibold">طريقة الدفع:</span>
-              <span>{paymentMethod === 'cash' ? 'نقدي' : 'بطاقة'}</span>
-            </div>
-            <div className="flex justify-between py-2">
-              <span className="font-semibold">المدفوع:</span>
-              <span>{amountPaid.toFixed(2)} ج.م</span>
-            </div>
-            <div className="flex justify-between py-2">
-              <span className="font-semibold">الباقي:</span>
-              <span>{changeAmount.toFixed(2)} ج.م</span>
+              <div className="flex justify-between">
+                <span>الضريبة:</span>
+                <span>0.00 ج.م</span>
+              </div>
+              <div className="flex justify-between border-t border-gray-400 pt-1">
+                <span className="font-bold">الإجمالي النهائي:</span>
+                <span className="font-bold">{totalAmount.toFixed(2)} ج.م</span>
+              </div>
             </div>
           </div>
+
+          {/* Right: Empty for balance */}
+          <div className="flex-1"></div>
         </div>
 
-        {/* Footer */}
-        <div className="text-center border-t-2 border-gray-300 pt-4">
-          <p className="text-gray-600 mb-2">شكراً لزيارتكم</p>
-          <p className="text-sm text-gray-500">نتمنى أن نراكم مرة أخرى قريباً</p>
+        {/* Bottom Center: Thank you and signature */}
+        <div className="text-center mt-12">
+          <p className="text-lg font-semibold text-gray-800 mb-4">شكراً لتعاملكم معنا</p>
+          <div className="border-t border-gray-400 w-64 mx-auto mt-8">
+            <p className="text-sm text-gray-600 mt-2">توقيع العميل</p>
+          </div>
         </div>
 
         {/* Print Button */}
