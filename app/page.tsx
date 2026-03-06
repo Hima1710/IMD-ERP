@@ -6,6 +6,7 @@ import { POSHeader } from '@/components/pos-header'
 import { ProductCatalog } from '@/components/product-catalog'
 import { ShoppingCart } from '@/components/shopping-cart'
 import { DashboardStats } from '@/components/dashboard-stats'
+import InvoiceA4 from '@/components/InvoiceA4'
 import { supabase } from '@/lib/supabase'
 import { Product, ProductFormData, toProductUI } from '@/lib/types'
 import { ShoppingCart as CartIcon, Package } from 'lucide-react'
@@ -21,6 +22,11 @@ export default function POSPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isReady, setIsReady] = useState(false)
+  const [user, setUser] = useState<any>(null)
+  const [showInvoiceDemo, setShowInvoiceDemo] = useState(false)
+
+  // Extract phone number from user email (e.g., 01558905021@paintmaster.com -> 01558905021)
+  const cashierPhone = user?.email ? user.email.split('@')[0] : ''
 
   // Wait for session to be available, then fetch products
   useEffect(() => {
@@ -43,6 +49,7 @@ export default function POSPage() {
           const { data: { session } } = await supabase.auth.getSession()
           if (session?.user) {
             user = session.user
+            setUser(user) // Set the user state
             console.log('✅ Session found:', session.user.email)
             break
           }
@@ -323,6 +330,16 @@ export default function POSPage() {
 
             {/* Main Content Area */}
             <div className="flex-1 flex overflow-hidden">
+              {/* Demo Button */}
+              <div className="absolute top-20 right-6 z-10">
+                <button
+                  onClick={() => setShowInvoiceDemo(true)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
+                >
+                  عرض فاتورة تجريبية
+                </button>
+              </div>
+
               {/* Left side: Shopping Cart */}
               <div className="w-80 border-r border-slate-200 bg-white overflow-y-auto">
                 <ShoppingCart
@@ -349,6 +366,40 @@ export default function POSPage() {
             </div>
           </div>
         </>
+      )}
+
+      {/* Invoice Demo Modal */}
+      {showInvoiceDemo && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded-lg max-w-4xl max-h-screen overflow-y-auto">
+            <button
+              onClick={() => setShowInvoiceDemo(false)}
+              className="mb-4 bg-red-500 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium"
+            >
+              إغلاق
+            </button>
+            <InvoiceA4
+              items={[
+                { name: 'دهان داخلي', quantity: 2, price: 100, total: 200 },
+                { name: 'فرشاة', quantity: 1, price: 50, total: 50 }
+              ]}
+              subtotal={250}
+              discountAmount={0}
+              total={250}
+              paymentMethod="cash"
+              amountPaid={250}
+              changeAmount={0}
+              date={new Date().toISOString()}
+              invoiceId="INV-001"
+              cashierName={cashierPhone}
+              customerName="أحمد محمد"
+              customerPhone="01234567890"
+              storeName="متجر الدهانات الرئيسي"
+              storeAddress="الرياض، السعودية"
+              storePhone="01123456789"
+            />
+          </div>
+        </div>
       )}
     </div>
   )
