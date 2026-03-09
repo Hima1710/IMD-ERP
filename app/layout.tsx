@@ -33,7 +33,8 @@ icons: {
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
-  userScalable: false,
+  maximumScale: 5,
+  userScalable: true,
   themeColor: '#1e3a5f',
 }
 

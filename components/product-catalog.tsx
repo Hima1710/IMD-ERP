@@ -70,7 +70,7 @@ export function ProductCatalog({
         {onAddProduct && (
           <button
             onClick={() => setShowAddModal(true)}
-            className="bg-green-600 hover:bg-green-700 text-white px-3 md:px-4 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm"
+            className="bg-green-600 hover:bg-green-700 text-white px-3 md:px-4 py-2 rounded-xl flex items-center gap-2 transition-colors text-sm shadow-sm"
           >
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">إضافة منتج جديد</span>
@@ -109,7 +109,7 @@ export function ProductCatalog({
       {/* Add Product Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-bold text-slate-900">إضافة منتج جديد</h3>
               <button
@@ -129,7 +129,7 @@ export function ProductCatalog({
                   type="text"
                   value={newProduct.name}
                   onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="دهان داخلي فاخر"
                 />
               </div>
@@ -143,7 +143,7 @@ export function ProductCatalog({
                     type="number"
                     value={newProduct.price_sell}
                     onChange={(e) => setNewProduct({...newProduct, price_sell: parseFloat(e.target.value) || 0})}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     min="0"
                     step="0.01"
                   />
@@ -157,7 +157,7 @@ export function ProductCatalog({
                     type="number"
                     value={newProduct.price_buy}
                     onChange={(e) => setNewProduct({...newProduct, price_buy: parseFloat(e.target.value) || 0})}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     min="0"
                     step="0.01"
                   />
@@ -173,7 +173,7 @@ export function ProductCatalog({
                     type="number"
                     value={newProduct.stock}
                     onChange={(e) => setNewProduct({...newProduct, stock: parseInt(e.target.value) || 0})}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     min="0"
                   />
                 </div>
@@ -185,7 +185,7 @@ export function ProductCatalog({
                   <select
                     value={newProduct.unit}
                     onChange={(e) => setNewProduct({...newProduct, unit: e.target.value})}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="قطعة">قطعة</option>
                     <option value="بستلة">بستلة</option>
@@ -200,13 +200,13 @@ export function ProductCatalog({
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setShowAddModal(false)}
-                className="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 py-2 rounded-lg transition-colors"
+                className="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 py-2 rounded-xl transition-colors"
               >
                 إلغاء
               </button>
               <button
                 onClick={handleAddProduct}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition-colors"
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-xl transition-colors"
               >
                 إضافة المنتج
               </button>
@@ -228,7 +228,7 @@ function ProductCard({ product, onAddToCart }: ProductCardProps) {
   const isOutOfStock = displayProduct.stock <= 0
 
   return (
-    <div className="bg-white border border-slate-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
+    <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-200 shadow-sm">
       {/* Image */}
       <div className="w-full h-28 md:h-40 bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center relative">
         <div className="text-2xl md:text-3xl">📦</div>
@@ -262,10 +262,10 @@ function ProductCard({ product, onAddToCart }: ProductCardProps) {
         <button
           onClick={() => onAddToCart(product.id)}
           disabled={isOutOfStock}
-          className={`w-full flex items-center justify-center gap-1 md:gap-2 py-1.5 md:py-2 rounded-lg font-medium transition-colors text-xs md:text-sm ${
+          className={`w-full flex items-center justify-center gap-1 md:gap-2 py-1.5 md:py-2 rounded-xl font-medium transition-colors text-xs md:text-sm ${
             isOutOfStock
               ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
-              : 'bg-blue-600 hover:bg-blue-700 text-white'
+              : 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm'
           }`}
         >
           <Plus className="w-3 md:w-4 h-3 md:h-4" />

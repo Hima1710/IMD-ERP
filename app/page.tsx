@@ -338,8 +338,8 @@ export default function POSPage() {
                 <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-400 border-t-blue-600"></div>
               </div>
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2">جاري تحميل النظام</h2>
-            <p className="text-blue-300">يرجى الانتظار...</p>
+            <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">جاري تحميل النظام</h2>
+            <p className="text-blue-300 text-sm">يرجى الانتظار...</p>
           </div>
         </div>
       ) : (
@@ -361,14 +361,14 @@ export default function POSPage() {
             <div className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 shadow-sm">
               <button
                 onClick={() => setMobileNavOpen(true)}
-                className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200"
+                className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200"
               >
                 <Menu className="w-5 h-5 text-slate-700" />
               </button>
-              <h1 className="text-lg font-bold text-slate-900">نقاط البيع</h1>
+              <h1 className="text-base font-bold text-slate-900">نقاط البيع</h1>
               <button
                 onClick={() => setMobileCartOpen(true)}
-                className="relative p-2 rounded-lg bg-blue-600 hover:bg-blue-700"
+                className="relative p-2 rounded-xl bg-blue-600 hover:bg-blue-700"
               >
                 <ShoppingBag className="w-5 h-5 text-white" />
                 {cartItems.length > 0 && (
@@ -387,14 +387,14 @@ export default function POSPage() {
             />
 
             {/* Dashboard Stats */}
-            <div className="px-4 md:px-6 py-4 bg-slate-50">
+            <div className="px-4 md:px-8 py-4 bg-slate-50">
               <DashboardStats stats={stats} />
             </div>
 
             {/* Main Content Area - Responsive: Stack on mobile, side by side on desktop */}
             <div className="flex-1 flex flex-col md:flex-row overflow-hidden pb-20 md:pb-0">
               {/* Product Catalog - Full width on mobile, left side on desktop */}
-              <div className="flex-1 overflow-y-auto p-4 md:p-6 order-2 md:order-1">
+              <div className="flex-1 overflow-y-auto p-4 md:p-8 order-2 md:order-1">
                 <ProductCatalog
                   products={filteredProducts}
                   selectedCategory={selectedCategory}
@@ -406,7 +406,7 @@ export default function POSPage() {
               </div>
 
               {/* Shopping Cart - Hidden on mobile (use bottom sheet), visible on desktop */}
-              <div className="hidden md:block w-80 border-r border-slate-200 bg-white overflow-y-auto order-2">
+              <div className="hidden md:block w-80 border-r border-slate-200 bg-white overflow-y-auto order-2 shadow-sm">
                 <ShoppingCart
                   cartItems={cartItems}
                   allProducts={productsForDisplay}
@@ -428,7 +428,7 @@ export default function POSPage() {
                   <h2 className="text-lg font-bold text-slate-900">سلة المشتريات</h2>
                   <button
                     onClick={() => setMobileCartOpen(false)}
-                    className="p-2 rounded-lg bg-slate-200 hover:bg-slate-300"
+                    className="p-2 rounded-xl bg-slate-200 hover:bg-slate-300"
                   >
                     <X className="w-5 h-5 text-slate-700" />
                   </button>

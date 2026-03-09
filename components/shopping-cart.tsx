@@ -404,7 +404,7 @@ export function ShoppingCart({
 
   return (
     <div className="flex flex-col h-full bg-white">
-      <div className="p-3 md:p-4 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-slate-50">
+      <div className="p-3 md:p-4 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-slate-50 rounded-t-2xl">
         <div className="flex items-center gap-2 mb-1">
           <ReceiptText className="w-4 md:w-5 h-4 md:h-5 text-blue-600" />
           <h2 className="text-base md:text-lg font-bold text-slate-900">سلة المشتريات</h2>
@@ -465,14 +465,14 @@ export function ShoppingCart({
           <div className="grid grid-cols-2 gap-2 pt-2">
             <button
               onClick={() => { setAmountPaid(total); setShowPaymentModal(true); }}
-              className="flex items-center justify-center gap-1 md:gap-2 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-medium transition-colors text-sm"
+              className="flex items-center justify-center gap-1 md:gap-2 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-xl font-medium transition-colors text-sm shadow-sm active:scale-95"
             >
               <CreditCard className="w-3 md:w-4 h-3 md:h-4" />
               <span>دفع</span>
             </button>
             <button
               onClick={handleShowReceipt}
-              className="flex items-center justify-center gap-1 md:gap-2 bg-slate-600 hover:bg-slate-700 text-white py-2 rounded-lg font-medium transition-colors text-sm"
+              className="flex items-center justify-center gap-1 md:gap-2 bg-slate-600 hover:bg-slate-700 text-white py-2.5 rounded-xl font-medium transition-colors text-sm shadow-sm active:scale-95"
             >
               <ReceiptText className="w-3 md:w-4 h-3 md:h-4" />
               <span>إيصال</span>
@@ -799,7 +799,7 @@ function CartItemRow({ item, onQuantityChange, onRemove }: CartItemRowProps) {
   const itemTotal = (item.price_sell || 0) * item.cartQuantity
 
   return (
-    <div className="bg-white border border-slate-200 rounded-lg p-2 md:p-3 hover:border-slate-300 transition-colors">
+    <div className="bg-white border border-slate-200 rounded-xl p-2 md:p-3 hover:border-slate-300 transition-colors shadow-sm">
       <div className="flex items-start justify-between mb-1 md:mb-2">
         <div className="flex-1 min-w-0">
           <p className="font-medium text-xs md:text-sm text-slate-900 line-clamp-1">{item.name}</p>
@@ -812,11 +812,11 @@ function CartItemRow({ item, onQuantityChange, onRemove }: CartItemRowProps) {
 
       <div className="flex items-center justify-between">
         <div className="flex items-center border border-slate-200 rounded-lg">
-          <button onClick={() => onQuantityChange(item.cartQuantity - 1)} className="px-1.5 md:px-2 py-1 text-slate-600 hover:bg-slate-100">
+          <button onClick={() => onQuantityChange(item.cartQuantity - 1)} className="px-1.5 md:px-2 py-1 text-slate-600 hover:bg-slate-100 rounded-lg">
             <Minus className="w-3 h-3" />
           </button>
           <span className="px-2 md:px-3 py-0.5 md:py-1 text-xs md:text-sm font-semibold text-slate-900 min-w-[32px] md:min-w-[40px] text-center">{item.cartQuantity}</span>
-          <button onClick={() => onQuantityChange(item.cartQuantity + 1)} className="px-1.5 md:px-2 py-1 text-slate-600 hover:bg-slate-100">
+          <button onClick={() => onQuantityChange(item.cartQuantity + 1)} className="px-1.5 md:px-2 py-1 text-slate-600 hover:bg-slate-100 rounded-lg">
             <Plus className="w-3 h-3" />
           </button>
         </div>

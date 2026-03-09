@@ -309,7 +309,7 @@ export default function CustomersPage() {
   }
 
   return (
-    <div className="flex h-screen bg-slate-50 text-slate-900 overflow-hidden">
+    <div className="flex h-screen bg-slate-50 text-slate-900 overflow-hidden" dir="rtl">
       {/* Mobile Navigation */}
       <MobileNav isOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
       <FloatingMenuButton onClick={() => setMobileNavOpen(true)} />
@@ -322,23 +322,23 @@ export default function CustomersPage() {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Mobile Header */}
         <div className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 shadow-sm">
-          <h1 className="text-lg font-bold text-slate-900">إدارة العملاء</h1>
-          <button onClick={handleOpenModal} className="p-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white">
+          <h1 className="text-base font-bold text-slate-900">إدارة العملاء</h1>
+          <button onClick={handleOpenModal} className="p-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white">
             <UserPlus className="w-5 h-5" />
           </button>
         </div>
         
         <POSHeader searchTerm={searchTerm} onSearchChange={setSearchTerm} selectedStore="customers" />
         
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6">
-          <div className="flex items-center justify-between mb-6">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 pb-24 md:pb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">إدارة العملاء</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900">إدارة العملاء</h1>
               <p className="text-sm text-slate-500 mt-1">
                 {activeTab === 'all' ? `${filteredCustomers.length} عميل` : `${creditCustomers.length} عميل مدين`}
               </p>
             </div>
-            <button onClick={handleOpenModal} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">
+            <button onClick={handleOpenModal} className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium shadow-sm transition-all active:scale-95">
               <UserPlus className="w-5 h-5" />
               إضافة عميل
             </button>
@@ -375,46 +375,72 @@ export default function CustomersPage() {
                   <Loader2 className="w-8 h-8 text-red-600 animate-spin" />
                 </div>
               ) : creditCustomers.length === 0 ? (
-                <div className="bg-white rounded-lg shadow p-12 text-center">
+                <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
                   <CreditCard className="w-16 h-16 text-slate-300 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-slate-700 mb-2">لا يوجد عملاء مدينين</h3>
                   <p className="text-slate-500">جميع العملاء سددوا مستحقاتهم</p>
                 </div>
               ) : (
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-red-50 border-b border-red-100">
-                        <th className="px-4 py-3 text-right text-sm font-semibold text-red-800">اسم العميل</th>
-                        <th className="px-4 py-3 text-right text-sm font-semibold text-red-800">رقم الهاتف</th>
-                        <th className="px-4 py-3 text-right text-sm font-semibold text-red-800">إجمالي الدين</th>
-                        <th className="px-4 py-3 text-center text-sm font-semibold text-red-800">الإجراءات</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-red-50">
-                      {creditCustomers.map((creditCustomer) => (
-                        <tr key={creditCustomer.customer.id} className="hover:bg-red-50/50">
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-                                <span className="text-red-600 font-semibold">{creditCustomer.customer.name.charAt(0).toUpperCase()}</span>
-                              </div>
-                              <span className="font-medium">{creditCustomer.customer.name}</span>
+                <>
+                  {/* Mobile Card View */}
+                  <div className="md:hidden space-y-3 mb-4">
+                    {creditCustomers.map((creditCustomer) => (
+                      <div key={creditCustomer.customer.id} className="bg-white rounded-2xl shadow-sm p-4 border border-red-100">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                              <span className="text-red-600 font-bold text-lg">{creditCustomer.customer.name.charAt(0).toUpperCase()}</span>
                             </div>
-                          </td>
-                          <td className="px-4 py-3">{creditCustomer.customer.phone || '-'}</td>
-                          <td className="px-4 py-3"><span className="font-bold text-red-600">{creditCustomer.totalDebt.toFixed(2)} ج.م</span></td>
-                          <td className="px-4 py-3">
-                            <button onClick={() => handleViewInvoices(creditCustomer)} className="flex items-center gap-1 px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-sm font-medium">
-                              <Eye className="w-4 h-4" />
-                              عرض الفواتير
-                            </button>
-                          </td>
+                            <div>
+                              <h3 className="font-bold text-slate-900">{creditCustomer.customer.name}</h3>
+                              <p className="text-sm text-slate-500">{creditCustomer.customer.phone || 'لا يوجد رقم'}</p>
+                            </div>
+                          </div>
+                          <span className="font-bold text-red-600 text-lg">{creditCustomer.totalDebt.toFixed(2)} ج.م</span>
+                        </div>
+                        <button onClick={() => handleViewInvoices(creditCustomer)} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-xl text-sm font-medium transition-colors">
+                          <Eye className="w-4 h-4" />
+                          عرض الفواتير
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block bg-white rounded-2xl shadow-sm overflow-hidden">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="bg-red-50 border-b border-red-100">
+                          <th className="px-4 py-3 text-right text-sm font-semibold text-red-800">اسم العميل</th>
+                          <th className="px-4 py-3 text-right text-sm font-semibold text-red-800">رقم الهاتف</th>
+                          <th className="px-4 py-3 text-right text-sm font-semibold text-red-800">إجمالي الدين</th>
+                          <th className="px-4 py-3 text-center text-sm font-semibold text-red-800">الإجراءات</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody className="divide-y divide-red-50">
+                        {creditCustomers.map((creditCustomer) => (
+                          <tr key={creditCustomer.customer.id} className="hover:bg-red-50/50">
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                                  <span className="text-red-600 font-semibold">{creditCustomer.customer.name.charAt(0).toUpperCase()}</span>
+                                </div>
+                                <span className="font-medium">{creditCustomer.customer.name}</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">{creditCustomer.customer.phone || '-'}</td>
+                            <td className="px-4 py-3"><span className="font-bold text-red-600">{creditCustomer.totalDebt.toFixed(2)} ج.م</span></td>
+                            <td className="px-4 py-3">
+                              <button onClick={() => handleViewInvoices(creditCustomer)} className="flex items-center gap-1 px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-sm font-medium">
+                                <Eye className="w-4 h-4" />
+                                عرض الفواتير
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
             </>
           )}
@@ -428,52 +454,89 @@ export default function CustomersPage() {
                   <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
                 </div>
               ) : filteredCustomers.length === 0 ? (
-                <div className="bg-white rounded-lg shadow p-12 text-center">
+                <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
                   <Users className="w-16 h-16 text-slate-300 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-slate-700 mb-2">{searchTerm ? 'لا توجد نتائج بحث' : 'لا يوجد عملاء'}</h3>
                   <p className="text-slate-500">{searchTerm ? 'جرب البحث بكلمات مختلفة' : 'أضف عميلك الأول للبدء'}</p>
                 </div>
               ) : (
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-slate-50 border-b border-slate-200">
-                        <th className="px-4 py-3 text-right text-sm font-semibold text-slate-700">اسم العميل</th>
-                        <th className="px-4 py-3 text-right text-sm font-semibold text-slate-700">رقم الهاتف</th>
-                        <th className="px-4 py-3 text-right text-sm font-semibold text-slate-700">العنوان</th>
-                        <th className="px-4 py-3 text-right text-sm font-semibold text-slate-700">تاريخ الإضافة</th>
-                        <th className="px-4 py-3 text-center text-sm font-semibold text-slate-700">الإجراءات</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {filteredCustomers.map((customer) => (
-                        <tr key={customer.id} className="hover:bg-slate-50">
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                                <span className="text-blue-600 font-semibold">{customer.name.charAt(0).toUpperCase()}</span>
-                              </div>
-                              <span className="font-medium">{customer.name}</span>
+                <>
+                  {/* Mobile Card View */}
+                  <div className="md:hidden space-y-3 mb-4">
+                    {filteredCustomers.map((customer) => (
+                      <div key={customer.id} className="bg-white rounded-2xl shadow-sm p-4 border border-slate-100">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                              <span className="text-blue-600 font-bold text-lg">{customer.name.charAt(0).toUpperCase()}</span>
                             </div>
-                          </td>
-                          <td className="px-4 py-3">{customer.phone || '-'}</td>
-                          <td className="px-4 py-3">{customer.address || '-'}</td>
-                          <td className="px-4 py-3 text-sm">{formatDate(customer.created_at)}</td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center justify-center gap-2">
-                              <button className="p-2 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-blue-600" title="تعديل">
-                                <Edit className="w-4 h-4" />
-                              </button>
-                              <button onClick={() => handleDelete(customer.id)} disabled={deletingId === customer.id} className="p-2 hover:bg-red-50 rounded-lg text-slate-600 hover:text-red-600 disabled:opacity-50" title="حذف">
-                                {deletingId === customer.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                              </button>
+                            <div>
+                              <h3 className="font-bold text-slate-900">{customer.name}</h3>
+                              <p className="text-sm text-slate-500">{customer.phone || 'لا يوجد رقم'}</p>
                             </div>
-                          </td>
+                          </div>
+                        </div>
+                        <div className="text-sm text-slate-600 mb-3">
+                          <span className="font-medium">العنوان:</span> {customer.address || '-'}
+                        </div>
+                        <div className="text-sm text-slate-500 mb-3">
+                          <span className="font-medium">تاريخ الإضافة:</span> {formatDate(customer.created_at)}
+                        </div>
+                        <div className="flex gap-2">
+                          <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-600 hover:text-blue-600 text-sm font-medium transition-colors">
+                            <Edit className="w-4 h-4" />
+                            تعديل
+                          </button>
+                          <button onClick={() => handleDelete(customer.id)} disabled={deletingId === customer.id} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-slate-100 hover:bg-red-50 rounded-xl text-slate-600 hover:text-red-600 disabled:opacity-50 text-sm font-medium transition-colors">
+                            {deletingId === customer.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                            حذف
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block bg-white rounded-2xl shadow-sm overflow-hidden">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-200">
+                          <th className="px-4 py-3 text-right text-sm font-semibold text-slate-700">اسم العميل</th>
+                          <th className="px-4 py-3 text-right text-sm font-semibold text-slate-700">رقم الهاتف</th>
+                          <th className="px-4 py-3 text-right text-sm font-semibold text-slate-700">العنوان</th>
+                          <th className="px-4 py-3 text-right text-sm font-semibold text-slate-700">تاريخ الإضافة</th>
+                          <th className="px-4 py-3 text-center text-sm font-semibold text-slate-700">الإجراءات</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {filteredCustomers.map((customer) => (
+                          <tr key={customer.id} className="hover:bg-slate-50">
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                  <span className="text-blue-600 font-semibold">{customer.name.charAt(0).toUpperCase()}</span>
+                                </div>
+                                <span className="font-medium">{customer.name}</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">{customer.phone || '-'}</td>
+                            <td className="px-4 py-3">{customer.address || '-'}</td>
+                            <td className="px-4 py-3 text-sm">{formatDate(customer.created_at)}</td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center justify-center gap-2">
+                                <button className="p-2 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-blue-600" title="تعديل">
+                                  <Edit className="w-4 h-4" />
+                                </button>
+                                <button onClick={() => handleDelete(customer.id)} disabled={deletingId === customer.id} className="p-2 hover:bg-red-50 rounded-lg text-slate-600 hover:text-red-600 disabled:opacity-50" title="حذف">
+                                  {deletingId === customer.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
             </>
           )}
@@ -550,6 +613,9 @@ export default function CustomersPage() {
           </div>
         </div>
       )}
+
+      {/* Bottom Navigation for Mobile */}
+      <BottomNav cartCount={0} />
     </div>
   )
 }
