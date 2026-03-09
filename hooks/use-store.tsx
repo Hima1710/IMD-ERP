@@ -74,25 +74,51 @@ export function StoreProvider({ children }: StoreProviderProps) {
 
       console.log('📥 [STORE] Fetching profile for user:', user.id)
 
-      // Fetch from profiles table to get shop_name
+      // Fetch from profiles table to get shop_id
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('phone, shop_name')
+        .select('shop_id, full_name')
         .eq('id', user.id)
         .single()
 
       if (profileError) {
-        console.warn('⚠️ [STORE] Profile not found, using defaults:', profileError.message)
-        // Still set loading to false, will use defaults
+        console.warn('⚠️ [STORE] Profile not found:', profileError.message)
         setLoading(false)
         return
       }
 
-      if (profileData) {
-        console.log('✅ [STORE] Profile fetched:', profileData)
+      if (profileData?.shop_id) {
+        // Fetch shop details from shops table
+        const { data: shopData, error: shopError } = await supabase
+          .from('shops')
+          .select('*')
+          .eq('id', profileData.shop_id)
+          .single()
+
+        if (shopError) {
+          console.warn('⚠️ [STORE] Shop not found:', shopError.message)
+          // Still set the profile name as fallback
+          setStore({
+            name: profileData.full_name || '',
+            phone: '',
+            address: '',
+            logo_url: '',
+          })
+        } else if (shopData) {
+          console.log('✅ [STORE] Shop fetched:', shopData)
+          setStore({
+            id: shopData.id,
+            name: shopData.name || '',
+            phone: shopData.phone || '',
+            address: shopData.location || '',
+            logo_url: shopData.logo_url || '',
+          })
+        }
+      } else {
+        // No shop_id, use profile full_name as fallback
         setStore({
-          name: profileData.shop_name || '',
-          phone: profileData.phone || '',
+          name: profileData.full_name || '',
+          phone: '',
           address: '',
           logo_url: '',
         })

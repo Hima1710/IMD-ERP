@@ -16,8 +16,8 @@ interface POSHeaderProps {
 interface LowStockProduct {
   id: string
   name: string
-  stock_quantity: number
-  min_stock_level: number
+  stock: number
+  min_quantity: number
 }
 
 export function POSHeader({ searchTerm, onSearchChange, selectedStore }: POSHeaderProps) {
@@ -65,26 +65,26 @@ export function POSHeader({ searchTerm, onSearchChange, selectedStore }: POSHead
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      // Get store_id
+      // Get shop_id
       const { data: profile } = await supabase
         .from('profiles')
-        .select('store_id')
+        .select('shop_id')
         .eq('id', user.id)
         .single()
 
-      if (!profile?.store_id) return
+      if (!profile?.shop_id) return
 
-      // Fetch all products for this store
+      // Fetch all products for this shop
       const { data: products } = await supabase
         .from('products')
-        .select('id, name, stock_quantity, min_stock_level')
-        .eq('store_id', profile.store_id)
+        .select('id, name, stock, min_quantity')
+        .eq('shop_id', profile.shop_id)
 
       if (!products) return
 
-      // Filter low stock products (stock_quantity <= min_stock_level)
+      // Filter low stock products (stock <= min_quantity)
       const lowStock = products.filter(p => 
-        (p.stock_quantity || 0) <= (p.min_stock_level || 0)
+        (p.stock || 0) <= (p.min_quantity || 0)
       )
 
       setLowStockProducts(lowStock)
@@ -174,7 +174,7 @@ export function POSHeader({ searchTerm, onSearchChange, selectedStore }: POSHead
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-slate-900 text-sm truncate">{product.name}</p>
                           <p className="text-xs text-red-600">
-                            المخزون: {product.stock_quantity || 0} / الحد الأدنى: {product.min_stock_level || 0}
+                            المخزون: {product.stock || 0} / الحد الأدنى: {product.min_quantity || 0}
                           </p>
                         </div>
                       </div>

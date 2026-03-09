@@ -31,7 +31,7 @@ interface Sale {
   remaining_amount: number
   items: any[]
   sale_date: string
-  store_id: string
+  shop_id: string
   created_at?: string
 }
 
@@ -92,14 +92,14 @@ export default function ReportsPage() {
         return
       }
 
-      // Get store_id from profiles
+      // Get shop_id from profiles
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('store_id')
+        .select('shop_id')
         .eq('id', userData.user.id)
         .single()
 
-      if (profileError || !profileData?.store_id) {
+      if (profileError || !profileData?.shop_id) {
         setError('لم يتم العثور على متجر للمستخدم')
         setLoading(false)
         return
@@ -107,22 +107,22 @@ export default function ReportsPage() {
 
       const { todayStart, monthStart } = getDateRanges()
 
-      // Fetch sales for this store
+      // Fetch transactions for this shop
       const { data: salesData, error: salesError } = await supabase
-        .from('sales')
+        .from('transactions')
         .select('*')
-        .eq('store_id', profileData.store_id)
+        .eq('shop_id', profileData.shop_id)
         .order('created_at', { ascending: false })
 
       if (salesError) {
         console.error('Error fetching sales:', salesError)
       }
 
-      // Fetch ALL products for this store
+      // Fetch ALL products for this shop
       const { data: productsData, error: productsError } = await supabase
         .from('products')
         .select('*')
-        .eq('store_id', profileData.store_id)
+        .eq('shop_id', profileData.shop_id)
 
       if (productsError) {
         console.error('Error fetching products:', productsError)
@@ -134,22 +134,22 @@ export default function ReportsPage() {
       // Calculate Today's Revenue
       const todayRevenue = allSales
         .filter(s => new Date(s.created_at || s.sale_date) >= new Date(todayStart))
-        .reduce((sum, s) => sum + (s.final_amount || 0), 0)
+        .reduce((sum, s) => sum + (s.total_amount || 0), 0)
 
       // Calculate Monthly Revenue
       const monthlyRevenue = allSales
         .filter(s => new Date(s.created_at || s.sale_date) >= new Date(monthStart))
-        .reduce((sum, s) => sum + (s.final_amount || 0), 0)
+        .reduce((sum, s) => sum + (s.total_amount || 0), 0)
 
       // Calculate Monthly Orders
       const monthlyOrders = allSales.filter(s => 
         new Date(s.created_at || s.sale_date) >= new Date(monthStart)
       ).length
 
-      // FIX: Filter low stock products in JavaScript
-      // Products where stock_quantity <= min_stock_level
+      // Filter low stock products in JavaScript
+      // Products where stock <= min_quantity
       const lowStock = allProducts.filter(p => 
-        (p.stock_quantity || 0) <= (p.min_stock_level || 0)
+        (p.stock || 0) <= (p.min_quantity || 0)
       )
 
       // Calculate Top Selling Products (from this month's sales)
@@ -332,7 +332,7 @@ return (
             </div>
           </div>
 
-{/* Section 2: Low Stock Alerts (FIXED) */}
+{/* Section 2: Low Stock Alerts */}
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 mb-6">
             <div className="p-4 border-b border-slate-200">
               <div className="flex items-center gap-2">
@@ -370,7 +370,7 @@ return (
                         </td>
                         <td className="px-4 py-3 text-slate-600">{product.category || '-'}</td>
                         <td className="px-4 py-3">
-                          <span className="font-bold text-red-600">{product.stock_quantity || 0}</span>
+                          <span className="font-bold text-red-600">{product.stock || 0}</span>
                         </td>
                       </tr>
                     ))}

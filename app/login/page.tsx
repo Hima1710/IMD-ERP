@@ -1,61 +1,61 @@
-
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { loginAction } from "@/app/actions/auth";
-import { Lock, Phone, Loader2 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { Lock, Mail, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [mobile, setMobile] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  const mobileToEmail = (m: string): string => {
-    const cleaned = m.trim();
-    return `${cleaned}@paintmaster.com`;
-  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
     console.log("🚀 [LOGIN] Login Started...");
-    console.log("📱 [LOGIN] Mobile:", mobile);
+    console.log("📧 [LOGIN] Email:", email);
     
     setError("");
     setLoading(true);
 
     try {
-      if (!mobile || !password) {
+      if (!email || !password) {
         console.log("❌ [LOGIN] Missing fields");
         setError("يرجى ملء جميع الحقول");
         setLoading(false);
         return;
       }
 
-      const email = mobileToEmail(mobile);
-      console.log("📧 [LOGIN] Email:", email);
-
-      console.log("⏳ [LOGIN] Attempting server-side login...");
+      console.log("⏳ [LOGIN] Attempting client-side login...");
       
-      // Call server action to handle auth with cookies
-      const result = await loginAction(email, password);
+      // Use client-side login with email and password
+      if (!supabase) {
+        setError("خطأ في الاتصال بالخادم. يرجى تحديث الصفحة.");
+        setLoading(false);
+        return;
+      }
 
-      if (!result.success) {
-        console.log("❌ [LOGIN] Login failed:", result.error);
-        setError(getErrorMessage(result.error || "Login failed"));
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        console.log("❌ [LOGIN] Login failed:", error.message);
+        setError(getErrorMessage(error.message));
         setLoading(false);
         return;
       }
 
       console.log("✅ [LOGIN] Login Success!");
-      console.log("🔄 [LOGIN] User:", result.user?.email);
+      console.log("🔄 [LOGIN] User:", data.user?.email);
       console.log("🔄 [LOGIN] Redirecting to /...");
       
-      // Redirect to home - middleware will see the session in cookies
+      // Redirect to home - session is set in browser
       router.push("/");
       
     } catch (err: any) {
@@ -126,24 +126,24 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* Form - Using onClick on button instead of onSubmit on form */}
-          <div className="space-y-5">
-            {/* Mobile Number Input */}
+          {/* Form */}
+          <form onSubmit={handleLogin} className="space-y-5">
+            {/* Email Input */}
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
-                رقم الموبايل
+                البريد الإلكتروني
               </label>
               <div className="relative flex items-center border border-slate-600 rounded-xl focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent bg-slate-800/50">
                 <input
-                  type="text"
-                  placeholder="01012345678"
-                  value={mobile}
-                  onChange={(e) => setMobile(e.target.value)}
-                  maxLength={11}
+                  type="email"
+                  placeholder="admin@imderp.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="w-full outline-none px-4 py-3 bg-transparent text-white placeholder-slate-500"
                   disabled={loading}
+                  required
                 />
-                <Phone className="absolute left-4 text-slate-400" size={20} />
+                <Mail className="absolute left-4 text-slate-400" size={20} />
               </div>
             </div>
 
@@ -160,15 +160,15 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full outline-none px-4 py-3 bg-transparent text-white placeholder-slate-500"
                   disabled={loading}
+                  required
                 />
                 <Lock className="absolute left-4 text-slate-400" size={20} />
               </div>
             </div>
 
-            {/* Login Button - Using onClick instead of form onSubmit */}
+            {/* Login Button */}
             <button
-              type="button"
-              onClick={handleLogin}
+              type="submit"
               disabled={loading}
               className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 disabled:from-slate-600 disabled:to-slate-500 text-white font-semibold py-3.5 rounded-xl transition duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-600/25"
             >
@@ -181,7 +181,7 @@ export default function LoginPage() {
                 "دخول"
               )}
             </button>
-          </div>
+          </form>
 
           {/* Footer */}
           <div className="mt-8 text-center text-slate-400 text-sm">

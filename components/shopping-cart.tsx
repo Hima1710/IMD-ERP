@@ -56,7 +56,7 @@ export function ShoppingCart({
   const [showAddCustomerModal, setShowAddCustomerModal] = useState(false)
   const [newCustomer, setNewCustomer] = useState({ name: '', phone: '', address: '' })
   const [savingCustomer, setSavingCustomer] = useState(false)
-  const [storeId, setStoreId] = useState<string | null>(null)
+  const [shopId, setShopId] = useState<string | null>(null)
   
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -105,17 +105,17 @@ export function ShoppingCart({
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('store_id')
+        .select('shop_id')
         .eq('id', user.id)
         .single()
 
-      if (!profile?.store_id) return
-      setStoreId(profile.store_id)
+      if (!profile?.shop_id) return
+      setShopId(profile.shop_id)
 
       const { data: customersData } = await supabase
         .from('customers')
         .select('*')
-        .eq('store_id', profile.store_id)
+        .eq('shop_id', profile.shop_id)
         .order('name', { ascending: true })
 
       setCustomers(customersData || [])
@@ -134,7 +134,7 @@ export function ShoppingCart({
   }
 
   const handleAddNewCustomer = async () => {
-    if (!newCustomer.name.trim() || !storeId || !supabase) {
+    if (!newCustomer.name.trim() || !shopId || !supabase) {
       alert('يرجى إدخال اسم العميل')
       return
     }
@@ -145,7 +145,7 @@ export function ShoppingCart({
       const { data, error } = await supabase
         .from('customers')
         .insert([{
-          store_id: storeId,
+          shop_id: shopId,
           name: newCustomer.name.trim(),
           phone: newCustomer.phone.trim(),
           address: newCustomer.address.trim()
@@ -284,44 +284,45 @@ export function ShoppingCart({
 
       const { data: profile } = await supabaseClient
         .from('profiles')
-        .select('store_id')
+        .select('shop_id')
         .eq('id', user.id)
         .single()
 
-      if (!profile?.store_id) {
-        alert('System Error: No store linked to this user.')
+      if (!profile?.shop_id) {
+        alert('System Error: No shop linked to this user.')
         setIsProcessing(false)
         return
       }
 
-      // Get store name
-      const { data: storeData } = await supabaseClient
-        .from('stores')
+      // Get shop name
+      const { data: shopData } = await supabaseClient
+        .from('shops')
         .select('name')
-        .eq('id', profile.store_id)
+        .eq('id', profile.shop_id)
         .single()
       
-      if (storeData?.name) {
-        storeName = storeData.name
+      if (shopData?.name) {
+        storeName = shopData.name
       }
 
-      const finalAmount = total
-      const remaining = Math.max(0, total - amountPaid)
+      const finalAmount = Number(total)
+      const paid = Number(amountPaid || 0)
+      const remaining = finalAmount - paid
 
       const { data: saleData, error: saleError } = await supabaseClient
-        .from('sales')
+        .from('transactions')
         .insert([{
-          total_amount: total,
-          final_amount: finalAmount,
-          discount_amount: discountAmount,
-          payment_method: paymentMethod,
-          amount_paid: amountPaid,
-          change_amount: changeAmount,
+          total_amount: finalAmount,
+          amount_paid: paid,
           remaining_amount: remaining,
+          final_amount: finalAmount,
+          discount_amount: Number(discountAmount),
+          payment_method: paymentMethod,
+          change_amount: Number(changeAmount),
           customer_id: selectedCustomer?.id || null,
           items: saleItems,
           sale_date: new Date().toISOString(),
-          store_id: profile.store_id,
+          shop_id: profile.shop_id,
         }])
         .select()
 
@@ -335,10 +336,10 @@ export function ShoppingCart({
       const newSaleId = saleData?.[0]?.id || null
 
       for (const item of cartProducts) {
-        const newStock = (item.stock_quantity || 0) - item.cartQuantity
+        const newStock = (item.stock || 0) - item.cartQuantity
         await supabaseClient
           .from('products')
-          .update({ stock_quantity: newStock })
+          .update({ stock: newStock })
           .eq('id', item.id)
       }
 
@@ -602,8 +603,8 @@ export function ShoppingCart({
                 <div className="grid grid-cols-4 gap-2 mt-2">
                   {[total, total * 2, total * 5, 100].map((amount) => (
                     <button
-                      key={amount}
-                      onClick={() => handleAmountPaidChange(amount)}
+                      key={`amount-${Math.ceil(amount)}`}
+                      onClick={() => handleAmountPaidChange(Number(amount))}
                       className="px-2 py-1 bg-slate-100 rounded text-sm hover:bg-slate-200"
                     >
                       {Math.ceil(amount)}
@@ -707,6 +708,7 @@ export function ShoppingCart({
             </div>
 
             <Invoice
+              onClose={handleCloseInvoice}
               items={lastSale.items}
               subtotal={lastSale.subtotal}
               discountAmount={lastSale.discountAmount}
@@ -751,6 +753,7 @@ export function ShoppingCart({
             </div>
 
             <Invoice
+              onClose={() => setShowReceiptModal(false)}
               items={lastSale.items}
               subtotal={lastSale.subtotal}
               discountAmount={lastSale.discountAmount}

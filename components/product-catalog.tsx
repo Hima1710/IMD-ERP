@@ -35,8 +35,8 @@ export function ProductCatalog({
     unit: 'قطعة',
     price_buy: 0,
     price_sell: 0,
-    stock_quantity: 0,
-    min_stock_level: 10,
+    stock: 0,
+    min_quantity: 10,
   })
 
   const handleAddProduct = async () => {
@@ -55,8 +55,8 @@ export function ProductCatalog({
           unit: 'قطعة',
           price_buy: 0,
           price_sell: 0,
-          stock_quantity: 0,
-          min_stock_level: 10,
+          stock: 0,
+          min_quantity: 10,
         })
       }
     }
@@ -170,8 +170,8 @@ export function ProductCatalog({
                   </label>
                   <input
                     type="number"
-                    value={newProduct.stock_quantity}
-                    onChange={(e) => setNewProduct({...newProduct, stock_quantity: parseInt(e.target.value) || 0})}
+                    value={newProduct.stock}
+                    onChange={(e) => setNewProduct({...newProduct, stock: parseInt(e.target.value) || 0})}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     min="0"
                   />
@@ -224,7 +224,7 @@ interface ProductCardProps {
 
 function ProductCard({ product, onAddToCart }: ProductCardProps) {
   const displayProduct = toProductUI(product)
-  const isOutOfStock = displayProduct.stock_quantity <= 0
+  const isOutOfStock = displayProduct.stock <= 0
 
   return (
     <div className="bg-white border border-slate-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
@@ -252,7 +252,7 @@ function ProductCard({ product, onAddToCart }: ProductCardProps) {
               <p className="text-sm font-bold text-slate-900">{(displayProduct.price_sell || 0).toFixed(2)} ج.م</p>
             </div>
             <span className="text-xs bg-slate-100 px-2 py-1 rounded text-slate-600">
-              {displayProduct.stock_quantity} {displayProduct.unit}
+              {displayProduct.stock} {displayProduct.unit}
             </span>
           </div>
         </div>

@@ -2,362 +2,176 @@
 
 import React from 'react'
 import { useStore } from '@/hooks/use-store'
-import { STORE_CONFIG } from '@/config/app.config'
-
-interface InvoiceItem {
-  name: string
-  quantity: number
-  price: number
-  total: number
-}
+import { X, Printer } from 'lucide-react'
 
 interface InvoiceProps {
-  items: InvoiceItem[]
-  subtotal: number
-  discountAmount: number
-  total: number
-  paymentMethod: 'cash' | 'card'
-  amountPaid: number
-  changeAmount: number
-  date?: string
+  shopName?: string
+  shopLogo?: string
+  shopAddress?: string
+  shopPhone?: string
   invoiceId?: string
+  date?: string
   cashierName?: string
+  items?: { name: string; quantity: number; price: number }[]
+  totalAmount?: number
+  onClose?: () => void
+  // Additional props from shopping-cart
+  subtotal?: number
+  discountAmount?: number
+  total?: number
+  paymentMethod?: string
+  amountPaid?: number
+  changeAmount?: number
   customerName?: string
   customerPhone?: string
-  storeName?: string
-  storeAddress?: string
-  storePhone?: string
 }
 
-// Format date as DD/MM/YYYY and get day name in Arabic
-function formatInvoiceDate(dateString?: string): { date: string; dayName: string; time: string } {
-  // Safely parse date with fallback
-  let now: Date
-  try {
-    now = dateString ? new Date(dateString) : new Date()
-    if (isNaN(now.getTime())) {
-      throw new Error('Invalid date')
-    }
-  } catch {
-    now = new Date() // Fallback to current date
-  }
-  
-  const dayNames = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'Saturday']
-  const dayIndex = now.getDay()
-  
-  const day = String(now.getDate()).padStart(2, '0')
-  const month = String(now.getMonth() + 1).padStart(2, '0')
-  const year = now.getFullYear()
-  
-  const hours = String(now.getHours()).padStart(2, '0')
-  const minutes = String(now.getMinutes()).padStart(2, '0')
-  
-  return {
-    date: `${day}/${month}/${year}`,
-    dayName: dayNames[dayIndex] || '',
-    time: `${hours}:${minutes}`
-  }
-}
-
-// Generate a short invoice ID
-function generateInvoiceId(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-  let result = ''
-  for (let i = 0; i < 8; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length))
-  }
-  return result
-}
-
-export default function Invoice({
-  items,
-  subtotal,
-  discountAmount,
-  total,
-  paymentMethod,
-  amountPaid,
-  changeAmount,
-  date,
-  invoiceId,
-  cashierName,
-  customerName,
-  customerPhone,
-}: InvoiceProps) {
+export default function Invoice(props: InvoiceProps) {
   const { store: globalStore } = useStore()
-
-  // Generate invoice ID if not provided
-  const finalInvoiceId = invoiceId || generateInvoiceId()
   
-  // Format date
-  const { date: formattedDate, dayName, time } = formatInvoiceDate(date)
+  // Use total if provided, otherwise fallback to totalAmount
+  const finalTotalAmount = props.totalAmount ?? props.total ?? 0
+  
+  // حل مشكلة التاريخ Invalid Date الظاهرة في الصور
+  const dateObj = props.date ? new Date(props.date) : new Date()
+  const isDateValid = !isNaN(dateObj.getTime())
+  const displayDate = isDateValid ? dateObj.toLocaleDateString('ar-EG') : new Date().toLocaleDateString('ar-EG')
+  const displayTime = isDateValid ? dateObj.toLocaleTimeString('ar-EG') : new Date().toLocaleTimeString('ar-EG')
 
-  // Calculate remaining balance (if any)
-  const remainingBalance = Math.max(0, total - amountPaid)
-
-  // Use props or fallback to store
-  const storeName = globalStore.name || globalStore.phone || 'متجر الدهانات'
-  const storeAddress = globalStore.address || ''
-  const storePhone = globalStore.phone || ''
+  const finalShopName = props.shopName || globalStore.name || 'متجر الدهانات'
+  const finalLogo = props.shopLogo || globalStore.logo_url
 
   return (
-    <div 
-      className="invoice-container bg-white p-4 max-w-[300px] mx-auto text-black select-none"
-      dir="rtl"
-      style={{ 
-        fontFamily: 'Cairo, Tajawal, Tahoma, Arial, sans-serif',
-        fontSize: '12px',
-        lineHeight: '1.4'
-      }}
-    >
-      {/* ==================== WATERMARK (Anti-Fraud) ==================== */}
-      <div 
-        className="absolute inset-0 flex items-center justify-center pointer-events-none"
-        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden' }}
-      >
-        <span 
-          className="text-6xl font-bold text-gray-400 opacity-10 transform -rotate-45 whitespace-nowrap"
-          style={{ 
-            opacity: 0.08, 
-            transform: 'rotate(-45deg)',
-            fontSize: '72px',
-            fontWeight: 'bold',
-            color: '#666',
-            whiteSpace: 'nowrap',
-            userSelect: 'none',
-            fontFamily: 'Cairo, Tajawal, sans-serif'
-          }}
-        >
-          {storeName}
-        </span>
-      </div>
-
-      {/* ==================== CONTENT ==================== */}
-      <div className="relative" style={{ position: 'relative', zIndex: 10 }}>
-        
-        {/* ==================== TOP RIGHT: Date & Time ==================== */}
-        <div className="text-left mb-3 text-xs" style={{ fontSize: '10px' }}>
-          <p className="text-slate-600">{formattedDate} - {time}</p>
-          <p className="text-slate-600">{dayName}</p>
-        </div>
-
-        {/* ==================== CENTER: Store Info ==================== */}
-        <div className="text-center border-b-2 border-black pb-2 mb-3">
-          {globalStore.logo_url ? (
-            <div className="mb-2">
-              <img 
-                src={globalStore.logo_url} 
-                alt="Logo" 
-                className="w-16 h-16 mx-auto object-contain"
-              />
-            </div>
-          ) : null}
-          
-          <h1 
-            className="text-xl font-bold mb-1"
-            style={{ fontSize: '18px', fontWeight: 'bold' }}
-          >
-            {storeName}
-          </h1>
-          
-          {storeAddress && (
-            <p className="text-xs" style={{ fontSize: '10px' }}>{storeAddress}</p>
-          )}
-          {storePhone && (
-            <p className="text-xs" style={{ fontSize: '10px' }}>{storePhone}</p>
-          )}
-        </div>
-
-        {/* ==================== TOP LEFT: Invoice Number ==================== */}
-        <div className="text-right mb-3" style={{ marginBottom: '12px' }}>
-          <div className="inline-block bg-slate-100 px-3 py-1 rounded">
-            <span className="text-xs font-bold" style={{ fontSize: '11px', fontFamily: 'monospace' }}>
-             فاتورة رقم: {finalInvoiceId}
-            </span>
-          </div>
-        </div>
-
-        {/* ==================== CUSTOMER INFO ==================== */}
-        {(customerName || customerPhone) && (
-          <div className="border-b border-gray-300 pb-2 mb-3" style={{ borderBottom: '1px solid #ccc', paddingBottom: '8px', marginBottom: '12px' }}>
-            <p className="text-xs" style={{ fontSize: '10px' }}>
-              <span className="font-medium">العميل:</span> {customerName || '-'}
-            </p>
-            {customerPhone && (
-              <p className="text-xs" style={{ fontSize: '10px' }}>
-                <span className="font-medium">الهاتف:</span> {customerPhone}
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* ==================== ITEMS TABLE HEADER ==================== */}
-        <div className="border-b border-gray-400 pb-1 mb-2" style={{ borderBottom: '1px solid #666', paddingBottom: '4px', marginBottom: '8px' }}>
-          <div className="flex text-xs font-bold" style={{ fontSize: '10px', fontWeight: 'bold' }}>
-            <span className="flex-1 text-right">الصنف</span>
-            <span className="w-12 text-center" style={{ width: '48px', textAlign: 'center' }}>الكمية</span>
-            <span className="w-14 text-left" style={{ width: '56px', textAlign: 'left' }}>السعر</span>
-            <span className="w-14 text-left" style={{ width: '56px', textAlign: 'left' }}>الإجمالي</span>
-          </div>
-        </div>
-
-        {/* ==================== ITEMS LIST ==================== */}
-        <div className="border-b border-gray-400 pb-2 mb-3" style={{ borderBottom: '1px solid #666', paddingBottom: '8px', marginBottom: '12px' }}>
-          {items.map((item, index) => (
-            <div 
-              key={index} 
-              className="flex text-xs py-0.5" 
-              style={{ fontSize: '10px', paddingTop: '2px', paddingBottom: '2px' }}
-            >
-              <span className="flex-1 text-right truncate" style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'right' }}>
-                {item.name}
-              </span>
-              <span className="w-12 text-center" style={{ width: '48px', textAlign: 'center' }}>
-                {item.quantity}
-              </span>
-              <span className="w-14 text-left" style={{ width: '56px', textAlign: 'left' }}>
-                {item.price.toFixed(2)}
-              </span>
-              <span className="w-14 text-left" style={{ width: '56px', textAlign: 'left' }}>
-                {item.total.toFixed(2)}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        {/* ==================== SUMMARY (Financials) ==================== */}
-        <div className="space-y-1 mb-3" style={{ marginBottom: '12px' }}>
-          {/* Subtotal */}
-          <div className="flex justify-between text-xs" style={{ fontSize: '10px' }}>
-            <span>المجموع:</span>
-            <span>{subtotal.toFixed(2)} ج.م</span>
-          </div>
-          
-          {/* Discount */}
-          {discountAmount > 0 && (
-            <div className="flex justify-between text-xs text-red-600" style={{ fontSize: '10px', color: '#dc2626' }}>
-              <span>الخصم:</span>
-              <span>-{discountAmount.toFixed(2)} ج.م</span>
-            </div>
-          )}
-          
-          {/* Total */}
-          <div 
-            className="flex justify-between text-base font-bold border-t-2 border-black pt-1"
-            style={{ fontSize: '14px', fontWeight: 'bold', borderTopWidth: '2px', paddingTop: '4px', marginTop: '4px' }}
-          >
-            <span>الإجمالي:</span>
-            <span>{total.toFixed(2)} ج.م</span>
-          </div>
-        </div>
-
-        {/* ==================== PAYMENT DETAILS ==================== */}
-        <div className="border-t border-gray-300 pt-2 mb-3" style={{ borderTop: '1px solid #ccc', paddingTop: '8px', marginBottom: '12px' }}>
-          {/* Payment Method */}
-          <div className="flex justify-between text-xs" style={{ fontSize: '10px' }}>
-            <span>طريقة الدفع:</span>
-            <span>{paymentMethod === 'cash' ? 'نقدي' : 'بطاقة'}</span>
-          </div>
-          
-          {/* Amount Paid */}
-          <div className="flex justify-between text-xs" style={{ fontSize: '10px' }}>
-            <span>المدفوع:</span>
-            <span>{amountPaid.toFixed(2)} ج.م</span>
-          </div>
-          
-          {/* Change (if cash) */}
-          {paymentMethod === 'cash' && changeAmount > 0 && (
-            <div className="flex justify-between text-xs font-bold text-green-600" style={{ fontSize: '10px', fontWeight: 'bold', color: '#16a34a' }}>
-              <span>الباقي:</span>
-              <span>{changeAmount.toFixed(2)} ج.م</span>
-            </div>
-          )}
-          
-          {/* Remaining Balance (if any) */}
-          {remainingBalance > 0 && (
-            <div className="flex justify-between text-xs font-bold text-red-600" style={{ fontSize: '10px', fontWeight: 'bold', color: '#dc2626' }}>
-              <span>المتبقي:</span>
-              <span>{remainingBalance.toFixed(2)} ج.م</span>
-            </div>
-          )}
-        </div>
-
-        {/* ==================== FOOTER ==================== */}
-        <div className="text-center pt-2 border-t border-gray-300" style={{ borderTop: '1px solid #ccc', paddingTop: '8px' }}>
-          <p className="text-sm font-bold" style={{ fontSize: '12px', fontWeight: 'bold' }}>
-            شكراً لتعاملكم معنا
-          </p>
-          <p className="text-xs text-gray-500 mt-1" style={{ fontSize: '9px', color: '#666', marginTop: '4px' }}>
-            {storeName}
-          </p>
-        </div>
-
-        {/* ==================== BARCODE SIMULATION ==================== */}
-        <div className="mt-3 text-center" style={{ marginTop: '12px' }}>
-          <div 
-            className="h-8 bg-gray-100 border border-gray-300 flex items-center justify-center overflow-hidden"
-            style={{ 
-              height: '32px', 
-              backgroundColor: '#f5f5f5', 
-              borderColor: '#ccc',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            <span style={{ fontSize: '10px', fontFamily: 'monospace', color: '#666', letterSpacing: '2px' }}>
-              ═══ {finalInvoiceId} ═══
-            </span>
-          </div>
-        </div>
-
-        {/* ==================== CUT LINE ==================== */}
-        <div className="mt-4 text-center" style={{ marginTop: '16px' }}>
-          <div style={{ borderTop: '1px dashed #999' }} />
-        </div>
-      </div>
-
-      {/* ==================== PRINT STYLES ==================== */}
-      <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Tajawal:wght@400;500;700&display=swap');
-        
+    <>
+      <style dangerouslySetInnerHTML={{ __html: `
         @media print {
-          body * {
-            visibility: hidden;
+          body * { display: none !important; }
+          .invoice-printable-wrapper, .invoice-printable-wrapper * { display: block !important; }
+          @page { size: A4; margin: 0; }
+          .invoice-printable-wrapper {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 210mm !important;
+            min-height: 297mm !important;
+            padding: 20mm !important;
+            background: white !important;
+            direction: rtl !important;
+            visibility: visible !important;
           }
-          .invoice-container,
-          .invoice-container * {
-            visibility: visible;
-          }
-          .invoice-container {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            margin: 0;
-            padding: 5mm;
-            box-shadow: none;
-          }
-          @page {
-            margin: 0;
-            size: 58mm auto;
-          }
-          * {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
+          .no-print { display: none !important; }
         }
+      `}} />
+
+      {/* الحاوية السوداء - تأكد أن z-index أعلى من أي شيء آخر */}
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 no-print" dir="rtl">
         
-        /* Thermal Printer Optimizations */
-        @media print and (min-width: 0) {
-          .invoice-container {
-            width: 58mm !important;
-            max-width: 58mm !important;
-            font-size: 10px !important;
-            line-height: 1.2 !important;
-          }
-        }
-      `}</style>
-    </div>
+        {/* زر الإغلاق المصلح */}
+        <button 
+          onClick={(e) => {
+            e.preventDefault();
+            props.onClose?.();
+          }} 
+          className="absolute top-6 left-6 bg-red-600 text-white p-3 rounded-full shadow-2xl z-[10001] hover:bg-red-700 transition-all active:scale-90"
+          title="إغلاق"
+        >
+          <X className="w-8 h-8" />
+        </button>
+
+        {/* جسم الفاتورة */}
+        <div className="invoice-printable-wrapper bg-white relative shadow-2xl overflow-auto max-h-[95vh] print:max-h-none print:shadow-none"
+          style={{ width: '210mm', minHeight: '297mm', padding: '15mm', fontFamily: 'Arial, sans-serif' }}>
+          
+          {/* العلامة المائية */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden">
+            <span className="transform -rotate-45 opacity-[0.05] text-[110px] font-black text-blue-900 select-none whitespace-nowrap">
+              {finalShopName}
+            </span>
+          </div>
+
+          <div className="relative z-10">
+            {/* رأس الفاتورة */}
+            <div className="border-b-4 border-blue-900 pb-6 mb-8 flex justify-between items-center">
+              <div className="text-right">
+                <h1 className="text-4xl font-black text-blue-900 mb-2">فاتورة بيع</h1>
+                <p className="text-lg font-bold">رقم الفاتورة: <span className="text-red-600 font-mono">#{props.invoiceId || '1'}</span></p>
+                <div className="mt-4 text-sm text-gray-500 font-bold">
+                  <p>التاريخ: {displayDate}</p>
+                  <p>الوقت: {displayTime}</p>
+                </div>
+              </div>
+
+              <div className="text-center">
+                {finalLogo && <img src={finalLogo} className="w-24 h-24 mx-auto mb-2 object-contain" alt="لوجو المحل" />}
+                <h2 className="text-3xl font-black">{finalShopName}</h2>
+                <p className="text-sm font-bold text-gray-600">{globalStore.address || 'السادات'}</p>
+                <p className="text-sm font-mono text-gray-600">{globalStore.phone}</p>
+              </div>
+
+              <div className="bg-blue-50 p-4 rounded-xl border-2 border-blue-200 text-center min-w-[140px]">
+                <p className="text-[10px] text-blue-400 font-black uppercase mb-1">المسؤول</p>
+                <p className="font-bold text-blue-900 text-lg">{props.cashierName}</p>
+              </div>
+            </div>
+
+            {/* الجدول */}
+            <table className="w-full border-collapse border-2 border-gray-300 mb-10 text-lg">
+              <thead>
+                <tr className="bg-blue-900 text-white">
+                  <th className="border-2 border-gray-300 p-3 w-16 text-center">#</th>
+                  <th className="border-2 border-gray-300 p-3 text-right">الصنف</th>
+                  <th className="border-2 border-gray-300 p-3 text-center">الكمية</th>
+                  <th className="border-2 border-gray-300 p-3 text-center">السعر</th>
+                  <th className="border-2 border-gray-300 p-3 text-center">الإجمالي</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(props.items || []).map((item: any, i: number) => (
+                  <tr key={i} className="even:bg-gray-50 hover:bg-blue-50/30 transition-colors">
+                    <td className="border-2 border-gray-300 p-3 text-center font-mono">{i + 1}</td>
+                    <td className="border-2 border-gray-300 p-3 font-bold">{item.name}</td>
+                    <td className="border-2 border-gray-300 p-3 text-center font-bold">{item.quantity}</td>
+                    <td className="border-2 border-gray-300 p-3 text-center font-mono">{(item.price || 0).toFixed(2)}</td>
+                    <td className="border-2 border-gray-300 p-3 text-center font-black bg-blue-50">{((item.quantity || 0) * (item.price || 0) || 0).toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/* ملخص الحساب */}
+            <div className="flex justify-end mb-16">
+              <div className="w-80 border-4 border-blue-900 rounded-2xl overflow-hidden shadow-xl">
+                <div className="bg-blue-900 text-white p-3 text-center font-bold text-xl">إجمالي الفاتورة</div>
+                <div className="p-6 bg-white flex justify-center text-4xl font-black text-blue-900">
+                  <span>{(finalTotalAmount || 0).toFixed(2)} ج.م</span>
+                </div>
+              </div>
+            </div>
+
+            {/* التوقيعات */}
+            <div className="grid grid-cols-2 gap-20 mt-20 px-10 text-center">
+              <div><p className="text-sm font-black text-gray-400 mb-12">توقيع المستلم</p><div className="border-b-2 border-dashed border-gray-400"></div></div>
+              <div><p className="text-sm font-black text-gray-400 mb-12">ختم وتوقيع المحل</p><div className="border-b-2 border-dashed border-gray-400"></div></div>
+            </div>
+            
+            <div className="mt-24 text-center pt-8 border-t-2 border-gray-100">
+              <p className="text-3xl font-black text-blue-900 mb-2 italic">"شكراً لتعاملكم معنا"</p>
+              <p className="text-xs text-gray-400 tracking-[3px] uppercase">Powered by IMD ERP System</p>
+            </div>
+          </div>
+
+          {/* زر الطباعة */}
+          <div className="no-print flex justify-center mt-12 mb-6">
+            <button 
+              onClick={() => window.print()} 
+              className="bg-blue-600 text-white px-20 py-5 rounded-2xl font-black text-2xl flex items-center gap-4 shadow-2xl hover:bg-blue-700 transition-all active:scale-95"
+            >
+              <Printer className="w-8 h-8" /> طباعة الآن
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
   )
 }
 

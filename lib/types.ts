@@ -6,10 +6,10 @@ export interface Product {
   unit: string
   price_buy: number
   price_sell: number
-  stock_quantity: number
-  min_stock_level: number
+  stock: number
+  min_quantity: number
   image_url?: string
-  store_id?: string
+  shop_id?: string
   created_at?: string
   updated_at?: string
 }
@@ -20,6 +20,9 @@ export interface ProductUI extends Product {
   quantity: number
   in_stock: boolean
   name_ar: string
+  price_sell: number
+  stock: number
+  unit: string
 }
 
 export type ProductFormData = Omit<Product, 'id' | 'created_at' | 'updated_at'>
@@ -29,8 +32,8 @@ export function toProductUI(p: Product): ProductUI {
   return {
     ...p,
     price: p.price_sell,
-    quantity: p.stock_quantity,
-    in_stock: p.stock_quantity > 0,
+    quantity: p.stock,
+    in_stock: p.stock > 0,
     name_ar: p.name,
   }
 }

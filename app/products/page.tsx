@@ -22,10 +22,10 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
-  const [storeId, setStoreId] = useState<string | null>(null)
+  const [shopId, setShopId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  // Fetch store_id from profiles and then fetch products
+  // Fetch shop_id from profiles and then fetch products
   const fetchProducts = useCallback(async () => {
     try {
       setLoading(true)
@@ -46,26 +46,26 @@ export default function ProductsPage() {
         return
       }
 
-      // Get store_id from profiles
+      // Get shop_id from profiles
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('store_id')
+        .select('shop_id')
         .eq('id', userData.user.id)
         .single()
 
-      if (profileError || !profileData?.store_id) {
+      if (profileError || !profileData?.shop_id) {
         setError('لم يتم العثور على متجر للمستخدم')
         setLoading(false)
         return
       }
 
-      setStoreId(profileData.store_id)
+      setShopId(profileData.shop_id)
 
-      // Fetch products for this store
+      // Fetch products for this shop
       const { data: productsData, error: productsError } = await supabase
         .from('products')
         .select('*')
-        .eq('store_id', profileData.store_id)
+        .eq('shop_id', profileData.shop_id)
         .order('name', { ascending: true })
 
       if (productsError) {
@@ -147,7 +147,7 @@ export default function ProductsPage() {
 
   // Check if stock is low
   const isLowStock = (product: Product): boolean => {
-    return product.stock_quantity <= (product.min_stock_level || 0)
+    return product.stock <= (product.min_quantity || 0)
   }
 
   return (
@@ -276,11 +276,11 @@ export default function ProductsPage() {
                           <span className={`font-semibold ${
                             isLowStock(product) ? 'text-red-600' : 'text-slate-900'
                           }`}>
-                            {product.stock_quantity || 0}
+                            {product.stock || 0}
                           </span>
-                          {product.min_stock_level && product.min_stock_level > 0 && (
+                          {product.min_quantity && product.min_quantity > 0 && (
                             <span className="text-xs text-slate-500 mr-1">
-                              / {product.min_stock_level}
+                              / {product.min_quantity}
                             </span>
                           )}
                         </td>

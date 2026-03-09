@@ -20,6 +20,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
+  const [shopId, setShopId] = useState<string | null>(null)
   const [store, setStore] = useState<StoreSettings>({
     name: '',
     phone: '',
@@ -41,17 +42,46 @@ export default function SettingsPage() {
     }
   }, [globalLoading, globalStore])
 
-  // Also get userId from supabase
+  // Also get userId and shopId from supabase
   useEffect(() => {
-    fetchUserId()
+    fetchUserAndShopData()
   }, [])
 
-  const fetchUserId = async () => {
+  const fetchUserAndShopData = async () => {
     if (!supabase) return
+    
     const userResponse = await supabase.auth.getUser()
     const userData = userResponse?.data
+    
     if (userData?.user) {
       setUserId(userData.user.id)
+      
+      // Get shop_id from profiles
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('shop_id')
+        .eq('id', userData.user.id)
+        .single()
+      
+      if (profile?.shop_id) {
+        setShopId(profile.shop_id)
+        
+        // Fetch shop details
+        const { data: shop } = await supabase
+          .from('shops')
+          .select('*')
+          .eq('id', profile.shop_id)
+          .single()
+        
+        if (shop) {
+          setStore({
+            name: shop.name || '',
+            phone: shop.phone || '',
+            address: shop.location || '',
+            logo_url: shop.logo_url || '',
+          })
+        }
+      }
     }
   }
 
@@ -66,6 +96,11 @@ export default function SettingsPage() {
       return
     }
 
+    if (!shopId) {
+      setMessage({ type: 'error', text: 'لا يوجد متجر مرتبط بهذا المستخدم' })
+      return
+    }
+
     if (!store.name.trim()) {
       setMessage({ type: 'error', text: 'يرجى إدخال اسم المتجر' })
       return
@@ -75,64 +110,41 @@ export default function SettingsPage() {
       setSaving(true)
       setMessage(null)
 
-      console.log('💾 [SETTINGS] Saving profile with shop_name:', store.name)
+      console.log('💾 [SETTINGS] Saving user profile and shop data...')
 
-      // Save to profiles table (this is what the app reads from)
+      // 1. Update User Profile in profiles table
       const { error: profileError } = await supabase
         .from('profiles')
-        .upsert(
-          {
-            id: userId,
-            phone: store.phone,
-            shop_name: store.name,
-          },
-          { onConflict: 'id' }
-        )
+        .update({
+          full_name: store.name,
+        })
+        .eq('id', userId)
 
       if (profileError) {
-        throw profileError
+        console.warn('⚠️ [SETTINGS] Profile update warning:', profileError.message)
       }
 
-      console.log('✅ [SETTINGS] Profile saved successfully')
+      console.log('✅ [SETTINGS] Profile updated successfully')
 
-      // Also save to stores table for backward compatibility (if it exists)
-      if (store.id) {
-        const { error: storeError } = await supabase
-          .from('stores')
-          .update({
-            name: store.name,
-            phone: store.phone,
-            address: store.address,
-            logo_url: store.logo_url,
-          })
-          .eq('id', store.id)
+      // 2. Update Shop Details in shops table (for Receipt)
+      const { error: shopError } = await supabase
+        .from('shops')
+        .update({
+          name: store.name,
+          phone: store.phone,
+          location: store.address,
+          logo_url: store.logo_url,
+        })
+        .eq('id', shopId)
 
-        if (storeError) {
-          console.warn('⚠️ [SETTINGS] Warning updating stores table:', storeError.message)
-        }
-      } else {
-        const { data: newStore, error: storeError } = await supabase
-          .from('stores')
-          .insert({
-            user_id: userId,
-            name: store.name,
-            phone: store.phone,
-            address: store.address,
-            logo_url: store.logo_url,
-          })
-          .select()
-          .single()
-
-        if (storeError) {
-          console.warn('⚠️ [SETTINGS] Warning creating stores table:', storeError.message)
-        }
-
-        if (newStore) {
-          setStore({ ...store, id: newStore.id })
-        }
+      if (shopError) {
+        console.error('❌ [SETTINGS] Error updating shop:', shopError)
+        throw shopError
       }
 
-      setMessage({ type: 'success', text: 'تم حفظ الإعدادات بنجاح' })
+      console.log('✅ [SETTINGS] Shop updated successfully')
+
+      setMessage({ type: 'success', text: 'تم حفظ إعدادات المتجر والفاتورة بنجاح' })
       
       // Refresh global store data
       await refreshStore()

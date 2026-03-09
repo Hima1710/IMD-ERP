@@ -6,7 +6,7 @@ import { POSHeader } from '@/components/pos-header'
 import { ProductCatalog } from '@/components/product-catalog'
 import { ShoppingCart } from '@/components/shopping-cart'
 import { DashboardStats } from '@/components/dashboard-stats'
-import InvoiceA4 from '@/components/InvoiceA4'
+import AdminDashboard from '@/components/AdminDashboard'
 import { supabase } from '@/lib/supabase'
 import { Product, ProductFormData, toProductUI } from '@/lib/types'
 import { ShoppingCart as CartIcon, Package } from 'lucide-react'
@@ -23,7 +23,7 @@ export default function POSPage() {
   const [error, setError] = useState<string | null>(null)
   const [isReady, setIsReady] = useState(false)
   const [user, setUser] = useState<any>(null)
-  const [showInvoiceDemo, setShowInvoiceDemo] = useState(false)
+  const [userRole, setUserRole] = useState<string>('cashier')
 
   // Extract phone number from user email (e.g., 01558905021@paintmaster.com -> 01558905021)
   const cashierPhone = user?.email ? user.email.split('@')[0] : ''
@@ -49,8 +49,25 @@ export default function POSPage() {
           const { data: { session } } = await supabase.auth.getSession()
           if (session?.user) {
             user = session.user
-            setUser(user) // Set the user state
-            console.log('✅ Session found:', session.user.email)
+            setUser(user)
+            console.log('✅ Session found:', user.email)
+            
+            // Fetch user role from profiles
+            try {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single()
+              
+              if (profile?.role) {
+                setUserRole(profile.role)
+                console.log('User role:', profile.role)
+              }
+            } catch (roleErr) {
+              console.log('Could not fetch role:', roleErr)
+            }
+            
             break
           }
           retries++
@@ -108,26 +125,25 @@ export default function POSPage() {
 
       console.log('📥 Fetching products for user:', user.email)
 
-      // Get store_id from profiles table
+      // Get shop_id from profiles table
       const { data: profile } = await supabase
         .from('profiles')
-        .select('store_id')
+        .select('shop_id')
         .eq('id', user.id)
         .single()
 
-      if (!profile?.store_id) {
-        console.log('No store linked to this user')
-        alert('لا يوجد متجر مرتبط بهذا المستخدم')
+      if (!profile?.shop_id) {
+        console.log('No shop linked to this user')
         setProducts([])
         setLoading(false)
         return
       }
 
-      // Fetch products for this store only
+      // Fetch products for this shop only
       const { data, error: fetchError } = await supabase
         .from('products')
         .select('*')
-        .eq('store_id', profile.store_id)
+        .eq('shop_id', profile.shop_id)
         .order('created_at', { ascending: false })
 
       if (fetchError) {
@@ -138,15 +154,17 @@ export default function POSPage() {
       }
 
       // Map Supabase data to Product type
+      // Note: The database uses 'price' field, not 'price_buy' or 'price_sell'
       const mappedProducts: Product[] = (data || []).map((item: any) => ({
         id: item.id,
         name: item.name || '',
         category: item.category || '',
         unit: item.unit || 'قطعة',
-        price_buy: parseFloat(item.price_buy) || 0,
-        price_sell: parseFloat(item.price_sell) || 0,
-        stock_quantity: parseInt(item.stock_quantity) || 0,
-        min_stock_level: parseInt(item.min_stock_level) || 0,
+        // Use 'price' from database and map to both price_buy and price_sell
+        price_buy: parseFloat(item.price) || parseFloat(item.price_buy) || 0,
+        price_sell: parseFloat(item.price) || parseFloat(item.price_sell) || 0,
+        stock: parseInt(item.stock || item.quantity) || 0,
+        min_quantity: parseInt(item.min_quantity) || 0,
         created_at: item.created_at,
         updated_at: item.updated_at,
       }))
@@ -177,14 +195,14 @@ export default function POSPage() {
         return null
       }
 
-      // Get store_id from profiles table
+      // Get shop_id from profiles table
       const { data: profile } = await supabase
         .from('profiles')
-        .select('store_id')
+        .select('shop_id')
         .eq('id', user.id)
         .single()
 
-      if (!profile?.store_id) {
+      if (!profile?.shop_id) {
         alert('لا يوجد متجر مرتبط بهذا المستخدم')
         return null
       }
@@ -193,16 +211,19 @@ export default function POSPage() {
 
       const { data, error } = await supabase
         .from('products')
-        .insert([{
-          name: productData.name,
-          category: productData.category || 'دهانات',
-          unit: productData.unit || 'قطعة',
-          price_buy: productData.price_buy || 0,
-          price_sell: productData.price_sell || 0,
-          stock_quantity: productData.stock_quantity || 0,
-          min_stock_level: productData.min_stock_level || 0,
-          store_id: profile.store_id, // Include store_id
-        }])
+        .insert([
+          {
+            name: productData.name,
+            category: productData.category,
+            unit: productData.unit,
+            // التعديل هنا: نربط السعر بأسماء الأعمدة الحقيقية في جدولك
+            price: productData.price_sell,     // السعر اللي العميل بيشتري بيه
+            cost_price: productData.price_buy, // سعر التكلفة عليك
+            stock: productData.stock,
+            min_quantity: productData.min_quantity,
+            shop_id: profile.shop_id
+          }
+        ])
         .select()
 
       if (error) {
@@ -224,10 +245,10 @@ export default function POSPage() {
 // Calculate real stats from Supabase data
   const stats = useMemo(() => {
     const totalProducts = products.length
-    // Low Stock: products where stock_quantity <= min_stock_level
+    // Low Stock: products where stock <= min_quantity
     const lowStock = products.filter(p => {
-      const qty = p.stock_quantity || 0
-      const min = p.min_stock_level || 0
+      const qty = p.stock || 0
+      const min = p.min_quantity || 0
       return qty <= min
     }).length
 
@@ -294,6 +315,11 @@ export default function POSPage() {
     }
   }
 
+  // Show AdminDashboard for super_admin users
+  if (userRole === 'super_admin' && isReady) {
+    return <AdminDashboard />
+  }
+
   return (
     <div className="flex h-screen bg-slate-50 text-slate-900 overflow-hidden">
       {!isReady ? (
@@ -330,16 +356,6 @@ export default function POSPage() {
 
             {/* Main Content Area */}
             <div className="flex-1 flex overflow-hidden">
-              {/* Demo Button */}
-              <div className="absolute top-20 right-6 z-10">
-                <button
-                  onClick={() => setShowInvoiceDemo(true)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
-                >
-                  عرض فاتورة تجريبية
-                </button>
-              </div>
-
               {/* Left side: Shopping Cart */}
               <div className="w-80 border-r border-slate-200 bg-white overflow-y-auto">
                 <ShoppingCart
@@ -366,30 +382,6 @@ export default function POSPage() {
             </div>
           </div>
         </>
-      )}
-
-      {/* Invoice Demo Modal */}
-      {showInvoiceDemo && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-4 rounded-lg max-w-4xl max-h-screen overflow-y-auto">
-            <button
-              onClick={() => setShowInvoiceDemo(false)}
-              className="mb-4 bg-red-500 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium"
-            >
-              إغلاق
-            </button>
-            <InvoiceA4
-              items={[
-                { name: 'دهان داخلي', quantity: 2, price: 100, total: 200 },
-                { name: 'فرشاة', quantity: 1, price: 50, total: 50 }
-              ]}
-              shopName="متجر الدهانات الرئيسي"
-              invoiceId="INV-001"
-              cashierName={cashierPhone}
-              totalAmount={250}
-            />
-          </div>
-        </div>
       )}
     </div>
   )
