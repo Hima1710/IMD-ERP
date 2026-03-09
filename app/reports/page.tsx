@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { Sidebar } from '@/components/sidebar'
 import { POSHeader } from '@/components/pos-header'
+import { BottomNav } from '@/components/BottomNav'
+import { MobileNav, FloatingMenuButton } from '@/components/MobileNav'
 import { supabase } from '@/lib/supabase'
 import { Product } from '@/lib/types'
 import Invoice from '@/components/Invoice'
@@ -16,7 +18,8 @@ import {
   Calendar,
   CreditCard,
   ArrowUpDown,
-  Package
+  Package,
+  Menu
 } from 'lucide-react'
 
 // Types
@@ -59,6 +62,7 @@ export default function ReportsPage() {
   const [lowStockProducts, setLowStockProducts] = useState<Product[]>([])
   const [topProducts, setTopProducts] = useState<TopProduct[]>([])
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
   // Get date ranges
   const getDateRanges = () => {
@@ -146,13 +150,12 @@ export default function ReportsPage() {
         new Date(s.created_at || s.sale_date) >= new Date(monthStart)
       ).length
 
-      // Filter low stock products in JavaScript
-      // Products where stock <= min_quantity
+      // Filter low stock products
       const lowStock = allProducts.filter(p => 
         (p.stock || 0) <= (p.min_quantity || 0)
       )
 
-      // Calculate Top Selling Products (from this month's sales)
+      // Calculate Top Selling Products
       const productSales: Record<string, number> = {}
       allSales
         .filter(s => new Date(s.created_at || s.sale_date) >= new Date(monthStart))
@@ -177,7 +180,7 @@ export default function ReportsPage() {
       })
       setLowStockProducts(lowStock)
       setTopProducts(top5Products)
-      setSales(allSales.slice(0, 20)) // Last 20 sales
+      setSales(allSales.slice(0, 20))
       setProducts(allProducts)
 
     } catch (err) {
@@ -192,7 +195,6 @@ export default function ReportsPage() {
     fetchData()
   }, [fetchData])
 
-  // Format date for display
   const formatDate = (dateString?: string) => {
     if (!dateString) return '-'
     const date = new Date(dateString)
@@ -205,10 +207,8 @@ export default function ReportsPage() {
     })
   }
 
-  // Get last 20 sales
   const recentSales = sales.slice(0, 20)
 
-  // Calculate items count for a sale
   const getItemsCount = (sale: Sale): number => {
     if (sale.items && Array.isArray(sale.items)) {
       return sale.items.reduce((sum, item) => sum + (item.quantity || 1), 0)
@@ -216,7 +216,6 @@ export default function ReportsPage() {
     return 0
   }
 
-  // Prepare invoice data for modal
   const getInvoiceData = (sale: Sale) => {
     const items = sale.items?.map((item: any) => ({
       name: item.product_name || item.name || 'منتج',
@@ -238,67 +237,84 @@ export default function ReportsPage() {
     }
   }
 
-if (loading) {
+  if (loading) {
     return (
-      <div 
-        className="flex h-screen text-slate-900 overflow-hidden"
-        style={{
-          backgroundImage: `linear-gradient(to bottom, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)), url('/WhatsApp Image 2026-03-05 at 1.04.54 AM.jpeg')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-          backgroundAttachment: 'fixed',
-        }}
-      >
-        <Sidebar selectedStore="reports" onStoreChange={() => {}} />
-        <div className="flex-1 flex flex-col overflow-hidden bg-white/80 backdrop-blur-sm">
+      <div className="flex h-screen bg-slate-50 text-slate-900 overflow-hidden" dir="rtl">
+        <MobileNav isOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
+        <FloatingMenuButton onClick={() => setMobileNavOpen(true)} />
+        
+        <div className="hidden md:block">
+          <Sidebar selectedStore="reports" onStoreChange={() => {}} />
+        </div>
+        
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Mobile Header */}
+          <div className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 shadow-sm">
+            <button onClick={() => setMobileNavOpen(true)} className="p-2 rounded-xl bg-slate-100">
+              <Menu className="w-5 h-5 text-slate-700" />
+            </button>
+            <h1 className="text-base font-bold">التقارير</h1>
+            <div className="w-9" />
+          </div>
+          
           <POSHeader searchTerm="" onSearchChange={() => {}} selectedStore="reports" />
-          <div className="flex-1 flex items-center justify-center">
-            <div className="flex flex-col items-center gap-3 bg-white/90 p-8 rounded-xl shadow-lg">
+          
+          <div className="flex-1 flex items-center justify-center p-4">
+            <div className="flex flex-col items-center gap-3 bg-white p-8 rounded-2xl shadow-sm">
               <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
               <p className="text-slate-500">جاري تحميل التقارير...</p>
             </div>
           </div>
         </div>
+        
+        <BottomNav cartCount={0} />
       </div>
     )
   }
 
-return (
-    <div 
-      className="flex h-screen text-slate-900 overflow-hidden"
-      style={{
-        backgroundImage: `linear-gradient(to bottom, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)), url('/WhatsApp Image 2026-03-05 at 1.04.54 AM.jpeg')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        backgroundAttachment: 'fixed',
-      }}
-    >
-      <Sidebar selectedStore="reports" onStoreChange={() => {}} />
-      <div className="flex-1 flex flex-col overflow-hidden bg-white/80 backdrop-blur-sm">
+  return (
+    <div className="flex h-screen bg-slate-50 text-slate-900 overflow-hidden" dir="rtl">
+      {/* Mobile Navigation */}
+      <MobileNav isOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
+      <FloatingMenuButton onClick={() => setMobileNavOpen(true)} />
+      
+      {/* Desktop Sidebar */}
+      <div className="hidden md:block">
+        <Sidebar selectedStore="reports" onStoreChange={() => {}} />
+      </div>
+      
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Mobile Header */}
+        <div className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 shadow-sm">
+          <button onClick={() => setMobileNavOpen(true)} className="p-2 rounded-xl bg-slate-100">
+            <Menu className="w-5 h-5 text-slate-700" />
+          </button>
+          <h1 className="text-base font-bold">التقارير</h1>
+          <div className="w-9" />
+        </div>
+        
         <POSHeader searchTerm="" onSearchChange={() => {}} selectedStore="reports" />
         
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 pb-24 md:pb-6">
           {/* Page Header */}
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-slate-900">لوحة التقارير</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900">التقارير</h1>
             <p className="text-sm text-slate-500 mt-1">نظرة شاملة على أداء متجرك</p>
           </div>
 
           {/* Error State */}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
               <p className="text-red-600 text-sm">{error}</p>
             </div>
           )}
 
-          {/* Section 1: Financial Summary Cards (KEEP 3 cards only) */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          {/* Financial Summary Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
             {/* Today's Revenue */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
               <div className="flex items-center justify-between mb-3">
-                <div className="p-2 bg-green-100 rounded-lg">
+                <div className="p-2 bg-green-100 rounded-xl">
                   <DollarSign className="w-5 h-5 text-green-600" />
                 </div>
                 <span className="text-xs text-slate-500">اليوم</span>
@@ -308,9 +324,9 @@ return (
             </div>
 
             {/* Monthly Revenue */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
               <div className="flex items-center justify-between mb-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
+                <div className="p-2 bg-blue-100 rounded-xl">
                   <TrendingUp className="w-5 h-5 text-blue-600" />
                 </div>
                 <span className="text-xs text-slate-500">هذا الشهر</span>
@@ -320,9 +336,9 @@ return (
             </div>
 
             {/* Total Orders */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
               <div className="flex items-center justify-between mb-3">
-                <div className="p-2 bg-purple-100 rounded-lg">
+                <div className="p-2 bg-purple-100 rounded-xl">
                   <ShoppingCart className="w-5 h-5 text-purple-600" />
                 </div>
                 <span className="text-xs text-slate-500">هذا الشهر</span>
@@ -332,9 +348,9 @@ return (
             </div>
           </div>
 
-{/* Section 2: Low Stock Alerts */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 mb-6">
-            <div className="p-4 border-b border-slate-200">
+          {/* Low Stock Alerts - Card on Mobile, Table on Desktop */}
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6">
+            <div className="p-4 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5 text-red-500" />
                 <h2 className="text-lg font-bold text-slate-900">تنبيهات المخزون المنخفض</h2>
@@ -353,37 +369,54 @@ return (
                 <p className="text-sm text-slate-500 mt-1">جميع المنتجات متوفرة بكميات كافية</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-red-50 border-b border-red-100">
-                      <th className="px-4 py-3 text-right text-sm font-semibold text-red-800">اسم المنتج</th>
-                      <th className="px-4 py-3 text-right text-sm font-semibold text-red-800">الفئة</th>
-                      <th className="px-4 py-3 text-right text-sm font-semibold text-red-800">الكمية الحالية</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-red-50">
-                    {lowStockProducts.map((product) => (
-                      <tr key={product.id} className="bg-red-50/50">
-                        <td className="px-4 py-3">
-                          <span className="font-medium text-red-700">{product.name}</span>
-                        </td>
-                        <td className="px-4 py-3 text-slate-600">{product.category || '-'}</td>
-                        <td className="px-4 py-3">
-                          <span className="font-bold text-red-600">{product.stock || 0}</span>
-                        </td>
+              <>
+                {/* Mobile Card View */}
+                <div className="md:hidden space-y-2 p-4">
+                  {lowStockProducts.map((product) => (
+                    <div key={product.id} className="bg-red-50 rounded-xl p-3 border border-red-100">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-medium text-red-700">{product.name}</p>
+                          <p className="text-xs text-red-500">{product.category || '-'}</p>
+                        </div>
+                        <span className="font-bold text-red-600">{product.stock || 0}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-red-50 border-b border-red-100">
+                        <th className="px-4 py-3 text-right text-sm font-semibold text-red-800">اسم المنتج</th>
+                        <th className="px-4 py-3 text-right text-sm font-semibold text-red-800">الفئة</th>
+                        <th className="px-4 py-3 text-right text-sm font-semibold text-red-800">الكمية الحالية</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-red-50">
+                      {lowStockProducts.map((product) => (
+                        <tr key={product.id} className="bg-red-50/50">
+                          <td className="px-4 py-3">
+                            <span className="font-medium text-red-700">{product.name}</span>
+                          </td>
+                          <td className="px-4 py-3 text-slate-600">{product.category || '-'}</td>
+                          <td className="px-4 py-3">
+                            <span className="font-bold text-red-600">{product.stock || 0}</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Section 3: Recent Transactions */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-              <div className="p-4 border-b border-slate-200">
+            {/* Recent Transactions */}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100">
+              <div className="p-4 border-b border-slate-100">
                 <div className="flex items-center gap-2">
                   <Calendar className="w-5 h-5 text-blue-600" />
                   <h2 className="text-lg font-bold text-slate-900">أحدث المعاملات</h2>
@@ -396,59 +429,65 @@ return (
                   <p className="text-slate-500">لا توجد معاملات بعد</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto max-h-96 overflow-y-auto">
-                  <table className="w-full">
-                    <thead className="bg-slate-50 sticky top-0">
-                      <tr>
-                        <th className="px-3 py-2 text-right text-xs font-semibold text-slate-600">الفاتورة</th>
-                        <th className="px-3 py-2 text-right text-xs font-semibold text-slate-600">التاريخ</th>
-                        <th className="px-3 py-2 text-right text-xs font-semibold text-slate-600">العدد</th>
-                        <th className="px-3 py-2 text-right text-xs font-semibold text-slate-600">الإجمالي</th>
-                        <th className="px-3 py-2 text-center text-xs font-semibold text-slate-600">عرض</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {recentSales.map((sale) => (
-                        <tr key={sale.id} className="hover:bg-slate-50">
-                          <td className="px-3 py-2">
-                            <span className="text-xs font-mono text-slate-600">
-                              #{sale.id.slice(0, 8)}
-                            </span>
-                          </td>
-                          <td className="px-3 py-2 text-xs text-slate-600">
-                            {formatDate(sale.created_at || sale.sale_date)}
-                          </td>
-                          <td className="px-3 py-2 text-xs text-slate-600">
-                            {getItemsCount(sale)} items
-                          </td>
-                          <td className="px-3 py-2">
-                            <span className="text-sm font-semibold text-slate-900">
-                              {(sale.final_amount || 0).toFixed(2)} ج.م
-                            </span>
-                          </td>
-                          <td className="px-3 py-2 text-center">
-                            <button
-                              onClick={() => setSelectedSale(sale)}
-                              className="p-1.5 hover:bg-blue-50 rounded-lg transition-colors text-blue-600"
-                              title="عرض الفاتورة"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-                          </td>
+                <>
+                  {/* Mobile Card View */}
+                  <div className="md:hidden space-y-2 p-4">
+                    {recentSales.map((sale) => (
+                      <div key={sale.id} className="bg-slate-50 rounded-xl p-3 flex justify-between items-center">
+                        <div>
+                          <p className="font-medium text-slate-900">#{sale.id.slice(0, 8)}</p>
+                          <p className="text-xs text-slate-500">{formatDate(sale.created_at || sale.sale_date)}</p>
+                        </div>
+                        <div className="text-left">
+                          <p className="font-bold text-slate-900">{(sale.final_amount || 0).toFixed(2)} ج.م</p>
+                          <button onClick={() => setSelectedSale(sale)} className="text-blue-600 text-xs">عرض</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block overflow-x-auto max-h-96">
+                    <table className="w-full">
+                      <thead className="bg-slate-50 sticky top-0">
+                        <tr>
+                          <th className="px-3 py-2 text-right text-xs font-semibold text-slate-600">الفاتورة</th>
+                          <th className="px-3 py-2 text-right text-xs font-semibold text-slate-600">التاريخ</th>
+                          <th className="px-3 py-2 text-right text-xs font-semibold text-slate-600">العدد</th>
+                          <th className="px-3 py-2 text-right text-xs font-semibold text-slate-600">الإجمالي</th>
+                          <th className="px-3 py-2 text-center text-xs font-semibold text-slate-600">عرض</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {recentSales.map((sale) => (
+                          <tr key={sale.id} className="hover:bg-slate-50">
+                            <td className="px-3 py-2">
+                              <span className="text-xs font-mono text-slate-600">#{sale.id.slice(0, 8)}</span>
+                            </td>
+                            <td className="px-3 py-2 text-xs text-slate-600">{formatDate(sale.created_at || sale.sale_date)}</td>
+                            <td className="px-3 py-2 text-xs text-slate-600">{getItemsCount(sale)} items</td>
+                            <td className="px-3 py-2">
+                              <span className="text-sm font-semibold text-slate-900">{(sale.final_amount || 0).toFixed(2)} ج.م</span>
+                            </td>
+                            <td className="px-3 py-2 text-center">
+                              <button onClick={() => setSelectedSale(sale)} className="p-1.5 hover:bg-blue-50 rounded-lg text-blue-600">
+                                <Eye className="w-4 h-4" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
             </div>
 
-            {/* Section 4: Top Selling Items */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-              <div className="p-4 border-b border-slate-200">
+            {/* Top Selling Items */}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100">
+              <div className="p-4 border-b border-slate-100">
                 <div className="flex items-center gap-2">
                   <ArrowUpDown className="w-5 h-5 text-purple-600" />
-                  <h2 className="text-lg font-bold text-slate-900">الأكثر مبيعاً هذا الشهر</h2>
+                  <h2 className="text-lg font-bold text-slate-900">الأكثر مبيعاً</h2>
                 </div>
               </div>
 
@@ -460,10 +499,7 @@ return (
               ) : (
                 <div className="p-4 space-y-3">
                   {topProducts.map((product, index) => (
-                    <div 
-                      key={index}
-                      className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
-                    >
+                    <div key={index} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
                       <div className="flex items-center gap-3">
                         <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
                           index === 0 ? 'bg-amber-100 text-amber-700' :
@@ -491,13 +527,10 @@ return (
       {/* Invoice Modal */}
       {selectedSale && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-4 w-full max-w-sm mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl p-4 w-full max-w-sm mx-4 max-h-[90vh] overflow-y-auto shadow-2xl">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-bold text-slate-900">تفاصيل الفاتورة</h3>
-              <button 
-                onClick={() => setSelectedSale(null)} 
-                className="text-slate-400 hover:text-slate-600"
-              >
+              <button onClick={() => setSelectedSale(null)} className="text-slate-400 hover:text-slate-600">
                 ✕
               </button>
             </div>
@@ -505,23 +538,20 @@ return (
             <Invoice {...getInvoiceData(selectedSale)} />
 
             <div className="flex gap-2 mt-4">
-              <button
-                onClick={() => window.print()}
-                className="flex-1 bg-slate-600 hover:bg-slate-700 text-white py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
-              >
+              <button onClick={() => window.print()} className="flex-1 bg-slate-600 hover:bg-slate-700 text-white py-2.5 rounded-xl font-medium flex items-center justify-center gap-2">
                 <CreditCard className="w-4 h-4" />
                 طباعة
               </button>
-              <button
-                onClick={() => setSelectedSale(null)}
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-medium transition-colors"
-              >
+              <button onClick={() => setSelectedSale(null)} className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-xl font-medium">
                 إغلاق
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Bottom Navigation */}
+      <BottomNav cartCount={0} />
     </div>
   )
 }

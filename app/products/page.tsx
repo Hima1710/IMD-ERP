@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { Sidebar } from '@/components/sidebar'
 import { POSHeader } from '@/components/pos-header'
+import { BottomNav } from '@/components/BottomNav'
+import { MobileNav, FloatingMenuButton } from '@/components/MobileNav'
 import { supabase } from '@/lib/supabase'
 import { Product } from '@/lib/types'
 import { 
@@ -13,7 +15,8 @@ import {
   Package, 
   AlertTriangle,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  Menu
 } from 'lucide-react'
 
 export default function ProductsPage() {
@@ -24,8 +27,8 @@ export default function ProductsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [shopId, setShopId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
-  // Fetch shop_id from profiles and then fetch products
   const fetchProducts = useCallback(async () => {
     try {
       setLoading(true)
@@ -37,7 +40,6 @@ export default function ProductsPage() {
         return
       }
 
-      // Get current user
       const { data: userData, error: userError } = await supabase.auth.getUser()
       
       if (userError || !userData?.user) {
@@ -46,7 +48,6 @@ export default function ProductsPage() {
         return
       }
 
-      // Get shop_id from profiles
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('shop_id')
@@ -61,7 +62,6 @@ export default function ProductsPage() {
 
       setShopId(profileData.shop_id)
 
-      // Fetch products for this shop
       const { data: productsData, error: productsError } = await supabase
         .from('products')
         .select('*')
@@ -84,12 +84,10 @@ export default function ProductsPage() {
     }
   }, [])
 
-  // Initial fetch
   useEffect(() => {
     fetchProducts()
   }, [fetchProducts])
 
-  // Filter products based on search term
   useEffect(() => {
     if (!searchTerm.trim()) {
       setFilteredProducts(products)
@@ -104,7 +102,6 @@ export default function ProductsPage() {
     setFilteredProducts(filtered)
   }, [searchTerm, products])
 
-  // Delete product handler
   const handleDelete = async (productId: string) => {
     if (!window.confirm('هل أنت متأكد من حذف هذا المنتج؟')) {
       return
@@ -128,7 +125,6 @@ export default function ProductsPage() {
         return
       }
 
-      // Remove from local state
       const updatedProducts = products.filter(p => p.id !== productId)
       setProducts(updatedProducts)
       setFilteredProducts(updatedProducts.filter(p => 
@@ -145,56 +141,71 @@ export default function ProductsPage() {
     }
   }
 
-  // Check if stock is low
   const isLowStock = (product: Product): boolean => {
     return product.stock <= (product.min_quantity || 0)
   }
 
   return (
-    <div className="flex h-screen bg-slate-50 text-slate-900 overflow-hidden">
-      <Sidebar selectedStore="products" onStoreChange={() => {}} />
+    <div className="flex h-screen bg-slate-50 text-slate-900 overflow-hidden" dir="rtl">
+      {/* Mobile Navigation */}
+      <MobileNav isOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
+      <FloatingMenuButton onClick={() => setMobileNavOpen(true)} />
+      
+      {/* Desktop Sidebar */}
+      <div className="hidden md:block">
+        <Sidebar selectedStore="products" onStoreChange={() => {}} />
+      </div>
+      
       <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Mobile Header */}
+        <div className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 shadow-sm">
+          <button onClick={() => setMobileNavOpen(true)} className="p-2 rounded-xl bg-slate-100">
+            <Menu className="w-5 h-5 text-slate-700" />
+          </button>
+          <h1 className="text-base font-bold">المنتجات</h1>
+          <div className="w-9" />
+        </div>
+        
         <POSHeader 
           searchTerm={searchTerm} 
           onSearchChange={setSearchTerm}
           selectedStore="products"
         />
         
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 pb-24 md:pb-6">
           {/* Page Header */}
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">إدارة المنتجات</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900">إدارة المنتجات</h1>
               <p className="text-sm text-slate-500 mt-1">
                 {filteredProducts.length} منتج
                 {searchTerm && ` (نتائج البحث: "${searchTerm}")`}
               </p>
             </div>
             
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <button
                 onClick={fetchProducts}
                 disabled={loading}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors"
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors"
               >
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                تحديث
+                <span className="hidden sm:inline">تحديث</span>
               </button>
-              <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium">
+              <button className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors font-medium w-full sm:w-auto">
                 <Plus className="w-5 h-5" />
-                إضافة منتج
+                <span className="sm:hidden">إضافة</span>
+                <span className="hidden sm:inline">إضافة منتج</span>
               </button>
             </div>
           </div>
 
-          {/* Error State */}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
               <p className="text-red-600 text-sm">{error}</p>
             </div>
           )}
 
-          {/* Loading State */}
           {loading && (
             <div className="flex items-center justify-center h-64">
               <div className="flex flex-col items-center gap-3">
@@ -204,129 +215,168 @@ export default function ProductsPage() {
             </div>
           )}
 
-          {/* Empty State */}
           {!loading && !error && filteredProducts.length === 0 && (
-            <div className="bg-white rounded-lg shadow p-12">
+            <div className="bg-white rounded-2xl shadow-sm p-8 sm:p-12">
               <div className="flex flex-col items-center justify-center">
-                <Package className="w-16 h-16 text-slate-300 mb-4" />
+                <Package className="w-14 h-14 sm:w-16 sm:h-16 text-slate-300 mb-4" />
                 <h3 className="text-lg font-semibold text-slate-700 mb-2">
                   {searchTerm ? 'لا توجد نتائج بحث' : 'لا توجد منتجات'}
                 </h3>
                 <p className="text-slate-500 text-center">
-                  {searchTerm 
-                    ? 'جرب البحث بكلمات مختلفة' 
-                    : 'أضف منتجك الأول للبدء'}
+                  {searchTerm ? 'جرب البحث بكلمات مختلفة' : 'أضف منتجك الأول للبدء'}
                 </p>
               </div>
             </div>
           )}
 
-          {/* Products Table */}
+          {/* Mobile Card View */}
           {!loading && !error && filteredProducts.length > 0 && (
-            <div className="bg-white rounded-lg shadow overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200">
-                      <th className="px-4 py-3 text-right text-sm font-semibold text-slate-700">اسم المنتج</th>
-                      <th className="px-4 py-3 text-right text-sm font-semibold text-slate-700">الفئة</th>
-                      <th className="px-4 py-3 text-right text-sm font-semibold text-slate-700">الوحدة</th>
-                      <th className="px-4 py-3 text-right text-sm font-semibold text-slate-700">سعر البيع</th>
-                      <th className="px-4 py-3 text-right text-sm font-semibold text-slate-700">الكمية</th>
-                      <th className="px-4 py-3 text-right text-sm font-semibold text-slate-700">الحالة</th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-700">الإجراءات</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {filteredProducts.map((product) => (
-                      <tr 
-                        key={product.id} 
-                        className={`hover:bg-slate-50 transition-colors ${
-                          isLowStock(product) ? 'bg-red-50/50' : ''
-                        }`}
-                      >
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden">
-                              {product.image_url ? (
-                                <img 
-                                  src={product.image_url} 
-                                  alt={product.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <Package className="w-5 h-5 text-slate-400" />
-                              )}
-                            </div>
-                            <span className="font-medium text-slate-900">{product.name}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-slate-600">
-                          {product.category || '-'}
-                        </td>
-                        <td className="px-4 py-3 text-slate-600">
-                          {product.unit || '-'}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="font-semibold text-slate-900">
-                            {(product.price_sell || 0).toFixed(2)} ج.م
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`font-semibold ${
-                            isLowStock(product) ? 'text-red-600' : 'text-slate-900'
-                          }`}>
-                            {product.stock || 0}
-                          </span>
-                          {product.min_quantity && product.min_quantity > 0 && (
-                            <span className="text-xs text-slate-500 mr-1">
-                              / {product.min_quantity}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          {isLowStock(product) ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-100 text-red-700 text-xs font-medium">
+            <>
+              <div className="md:hidden space-y-3 mb-4">
+                {filteredProducts.map((product) => (
+                  <div 
+                    key={product.id} 
+                    className={`bg-white rounded-2xl shadow-sm p-4 ${isLowStock(product) ? 'border border-red-200' : ''}`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                        {product.image_url ? (
+                          <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <Package className="w-6 h-6 text-slate-400" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start">
+                          <h3 className="font-semibold text-slate-900 truncate">{product.name}</h3>
+                          {isLowStock(product) && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-medium flex-shrink-0 mr-2">
                               <AlertTriangle className="w-3 h-3" />
-                              مخزون منخفض
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-medium">
-                              متوفر
+                              منخفض
                             </span>
                           )}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center justify-center gap-2">
-                            <button
-                              className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-600 hover:text-blue-600"
-                              title="تعديل"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(product.id)}
-                              disabled={deletingId === product.id}
-                              className="p-2 hover:bg-red-50 rounded-lg transition-colors text-slate-600 hover:text-red-600 disabled:opacity-50"
-                              title="حذف"
-                            >
-                              {deletingId === product.id ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                              ) : (
-                                <Trash2 className="w-4 h-4" />
-                              )}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        </div>
+                        <p className="text-sm text-slate-500">{product.category || 'بدون فئة'}</p>
+                        <div className="flex justify-between items-center mt-2">
+                          <span className="font-bold text-slate-900">{(product.price_sell || 0).toFixed(2)} ج.م</span>
+                          <span className={`text-sm ${isLowStock(product) ? 'text-red-600 font-semibold' : 'text-slate-600'}`}>
+                            المخزون: {product.stock || 0}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 mt-3 pt-3 border-t border-slate-100">
+                      <button className="flex-1 flex items-center justify-center gap-2 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors text-sm">
+                        <Edit className="w-4 h-4" />
+                        تعديل
+                      </button>
+                      <button
+                        onClick={() => handleDelete(product.id)}
+                        disabled={deletingId === product.id}
+                        className="flex-1 flex items-center justify-center gap-2 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition-colors text-sm disabled:opacity-50"
+                      >
+                        {deletingId === product.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
+                        حذف
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block bg-white rounded-2xl shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-200">
+                        <th className="px-4 py-3 text-right text-sm font-semibold text-slate-700">اسم المنتج</th>
+                        <th className="px-4 py-3 text-right text-sm font-semibold text-slate-700">الفئة</th>
+                        <th className="px-4 py-3 text-right text-sm font-semibold text-slate-700">الوحدة</th>
+                        <th className="px-4 py-3 text-right text-sm font-semibold text-slate-700">سعر البيع</th>
+                        <th className="px-4 py-3 text-right text-sm font-semibold text-slate-700">الكمية</th>
+                        <th className="px-4 py-3 text-right text-sm font-semibold text-slate-700">الحالة</th>
+                        <th className="px-4 py-3 text-center text-sm font-semibold text-slate-700">الإجراءات</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {filteredProducts.map((product) => (
+                        <tr 
+                          key={product.id} 
+                          className={`hover:bg-slate-50 transition-colors ${isLowStock(product) ? 'bg-red-50/50' : ''}`}
+                        >
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center overflow-hidden">
+                                {product.image_url ? (
+                                  <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                                ) : (
+                                  <Package className="w-5 h-5 text-slate-400" />
+                                )}
+                              </div>
+                              <span className="font-medium text-slate-900">{product.name}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-slate-600">{product.category || '-'}</td>
+                          <td className="px-4 py-3 text-slate-600">{product.unit || '-'}</td>
+                          <td className="px-4 py-3">
+                            <span className="font-semibold text-slate-900">{(product.price_sell || 0).toFixed(2)} ج.م</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`font-semibold ${isLowStock(product) ? 'text-red-600' : 'text-slate-900'}`}>
+                              {product.stock || 0}
+                            </span>
+                            {product.min_quantity && product.min_quantity > 0 && (
+                              <span className="text-xs text-slate-500 mr-1">/ {product.min_quantity}</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            {isLowStock(product) ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-100 text-red-700 text-xs font-medium">
+                                <AlertTriangle className="w-3 h-3" />
+                                مخزون منخفض
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-medium">
+                                متوفر
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center justify-center gap-2">
+                              <button className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-600 hover:text-blue-600" title="تعديل">
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(product.id)}
+                                disabled={deletingId === product.id}
+                                className="p-2 hover:bg-red-50 rounded-xl transition-colors text-slate-600 hover:text-red-600 disabled:opacity-50"
+                                title="حذف"
+                              >
+                                {deletingId === product.id ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="w-4 h-4" />
+                                )}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
           )}
         </div>
       </div>
+
+      {/* Bottom Navigation */}
+      <BottomNav cartCount={0} />
     </div>
   )
 }
