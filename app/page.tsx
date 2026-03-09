@@ -6,6 +6,8 @@ import { POSHeader } from '@/components/pos-header'
 import { ProductCatalog } from '@/components/product-catalog'
 import { ShoppingCart } from '@/components/shopping-cart'
 import { DashboardStats } from '@/components/dashboard-stats'
+import { BottomNav } from '@/components/BottomNav'
+import { MobileNav, FloatingMenuButton } from '@/components/MobileNav'
 import AdminDashboard from '@/components/AdminDashboard'
 import { supabase } from '@/lib/supabase'
 import { Product, ProductFormData, toProductUI } from '@/lib/types'
@@ -28,6 +30,7 @@ export default function POSPage() {
   // Responsive state
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [mobileCartOpen, setMobileCartOpen] = useState(false)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
   // Extract phone number from user email (e.g., 01558905021@paintmaster.com -> 01558905021)
   const cashierPhone = user?.email ? user.email.split('@')[0] : ''
@@ -341,15 +344,11 @@ export default function POSPage() {
         </div>
       ) : (
         <>
-          {/* Mobile Sidebar Overlay */}
-          {sidebarOpen && (
-            <div className="fixed inset-0 z-40 md:hidden">
-              <div className="fixed inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
-              <div className="fixed inset-y-0 right-0 w-72">
-                <Sidebar selectedStore={selectedStore} onStoreChange={setSelectedStore} />
-              </div>
-            </div>
-          )}
+          {/* Mobile Navigation Drawer */}
+          <MobileNav isOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
+
+          {/* Floating Menu Button for Mobile */}
+          <FloatingMenuButton onClick={() => setMobileNavOpen(true)} />
 
           {/* Sidebar - Desktop only */}
           <div className="hidden md:block">
@@ -361,7 +360,7 @@ export default function POSPage() {
             {/* Mobile Header */}
             <div className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 shadow-sm">
               <button
-                onClick={() => setSidebarOpen(true)}
+                onClick={() => setMobileNavOpen(true)}
                 className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200"
               >
                 <Menu className="w-5 h-5 text-slate-700" />
@@ -393,7 +392,7 @@ export default function POSPage() {
             </div>
 
             {/* Main Content Area - Responsive: Stack on mobile, side by side on desktop */}
-            <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+            <div className="flex-1 flex flex-col md:flex-row overflow-hidden pb-20 md:pb-0">
               {/* Product Catalog - Full width on mobile, left side on desktop */}
               <div className="flex-1 overflow-y-auto p-4 md:p-6 order-2 md:order-1">
                 <ProductCatalog
@@ -424,12 +423,12 @@ export default function POSPage() {
           {mobileCartOpen && (
             <div className="fixed inset-0 z-50 md:hidden">
               <div className="absolute inset-0 bg-black/50" onClick={() => setMobileCartOpen(false)} />
-              <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[90vh] overflow-hidden flex flex-col">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
+              <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-slate-50 rounded-t-2xl">
                   <h2 className="text-lg font-bold text-slate-900">سلة المشتريات</h2>
                   <button
                     onClick={() => setMobileCartOpen(false)}
-                    className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200"
+                    className="p-2 rounded-lg bg-slate-200 hover:bg-slate-300"
                   >
                     <X className="w-5 h-5 text-slate-700" />
                   </button>
@@ -447,6 +446,9 @@ export default function POSPage() {
               </div>
             </div>
           )}
+
+          {/* Bottom Navigation for Mobile */}
+          <BottomNav cartCount={cartItems.length} />
         </>
       )}
     </div>

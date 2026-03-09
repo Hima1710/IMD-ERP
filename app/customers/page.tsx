@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { Sidebar } from '@/components/sidebar'
 import { POSHeader } from '@/components/pos-header'
+import { BottomNav } from '@/components/BottomNav'
+import { MobileNav, FloatingMenuButton } from '@/components/MobileNav'
 import { supabase } from '@/lib/supabase'
 import { 
   Plus, 
@@ -57,6 +59,7 @@ export default function CustomersPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [shopId, setShopId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
   
   const [showAddModal, setShowAddModal] = useState(false)
   const [savingCustomer, setSavingCustomer] = useState(false)
@@ -307,11 +310,27 @@ export default function CustomersPage() {
 
   return (
     <div className="flex h-screen bg-slate-50 text-slate-900 overflow-hidden">
-      <Sidebar selectedStore="customers" onStoreChange={() => {}} />
+      {/* Mobile Navigation */}
+      <MobileNav isOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
+      <FloatingMenuButton onClick={() => setMobileNavOpen(true)} />
+      
+      {/* Desktop Sidebar */}
+      <div className="hidden md:block">
+        <Sidebar selectedStore="customers" onStoreChange={() => {}} />
+      </div>
+      
       <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Mobile Header */}
+        <div className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 shadow-sm">
+          <h1 className="text-lg font-bold text-slate-900">إدارة العملاء</h1>
+          <button onClick={handleOpenModal} className="p-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white">
+            <UserPlus className="w-5 h-5" />
+          </button>
+        </div>
+        
         <POSHeader searchTerm={searchTerm} onSearchChange={setSearchTerm} selectedStore="customers" />
         
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-2xl font-bold text-slate-900">إدارة العملاء</h1>
