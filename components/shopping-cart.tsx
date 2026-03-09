@@ -404,10 +404,10 @@ export function ShoppingCart({
 
   return (
     <div className="flex flex-col h-full bg-white">
-      <div className="p-4 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-slate-50">
+      <div className="p-3 md:p-4 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-slate-50">
         <div className="flex items-center gap-2 mb-1">
-          <ReceiptText className="w-5 h-5 text-blue-600" />
-          <h2 className="text-lg font-bold text-slate-900">سلة المشتريات</h2>
+          <ReceiptText className="w-4 md:w-5 h-4 md:h-5 text-blue-600" />
+          <h2 className="text-base md:text-lg font-bold text-slate-900">سلة المشتريات</h2>
         </div>
         <p className="text-xs text-slate-500">{cartItems.length} منتج</p>
       </div>
@@ -434,7 +434,7 @@ export function ShoppingCart({
       </div>
 
       {cartProducts.length > 0 && (
-        <div className="border-t border-slate-200 p-4 space-y-3 bg-slate-50">
+        <div className="border-t border-slate-200 p-3 md:p-4 space-y-2 md:space-y-3 bg-slate-50">
           <div className="flex justify-between text-sm">
             <span className="text-slate-600">المجموع:</span>
             <span className="font-semibold text-slate-900">{subtotal.toFixed(2)} ج.م</span>
@@ -442,40 +442,40 @@ export function ShoppingCart({
 
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-2">
-              <label className="text-slate-600">خصم %:</label>
+              <label className="text-slate-600 text-sm">خصم %:</label>
               <input
                 type="number"
                 min="0"
                 max="100"
                 value={discountPercent}
                 onChange={(e) => onDiscountChange(Math.max(0, Math.min(100, Number(e.target.value))))}
-                className="w-16 px-2 py-1 border border-slate-300 rounded text-sm"
+                className="w-14 md:w-16 px-2 py-1 border border-slate-300 rounded text-sm"
               />
             </div>
             {discountAmount > 0 && (
-              <span className="font-semibold text-red-600">-{discountAmount.toFixed(2)} ج.م</span>
+              <span className="font-semibold text-red-600 text-sm">-{discountAmount.toFixed(2)} ج.م</span>
             )}
           </div>
 
-          <div className="border-t border-slate-200 pt-3 flex justify-between bg-white px-2 py-2 rounded">
-            <span className="font-bold text-slate-900">الإجمالي:</span>
-            <span className="text-xl font-bold text-blue-600">{total.toFixed(2)} ج.م</span>
+          <div className="border-t border-slate-200 pt-2 md:pt-3 flex justify-between bg-white px-2 py-2 rounded">
+            <span className="font-bold text-slate-900 text-sm md:text-base">الإجمالي:</span>
+            <span className="text-lg md:text-xl font-bold text-blue-600">{total.toFixed(2)} ج.م</span>
           </div>
 
           <div className="grid grid-cols-2 gap-2 pt-2">
             <button
               onClick={() => { setAmountPaid(total); setShowPaymentModal(true); }}
-              className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-medium transition-colors text-sm"
+              className="flex items-center justify-center gap-1 md:gap-2 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-medium transition-colors text-sm"
             >
-              <CreditCard className="w-4 h-4" />
-              دفع
+              <CreditCard className="w-3 md:w-4 h-3 md:h-4" />
+              <span>دفع</span>
             </button>
             <button
               onClick={handleShowReceipt}
-              className="flex items-center justify-center gap-2 bg-slate-600 hover:bg-slate-700 text-white py-2 rounded-lg font-medium transition-colors text-sm"
+              className="flex items-center justify-center gap-1 md:gap-2 bg-slate-600 hover:bg-slate-700 text-white py-2 rounded-lg font-medium transition-colors text-sm"
             >
-              <ReceiptText className="w-4 h-4" />
-              إيصال
+              <ReceiptText className="w-3 md:w-4 h-3 md:h-4" />
+              <span>إيصال</span>
             </button>
           </div>
         </div>
@@ -799,28 +799,28 @@ function CartItemRow({ item, onQuantityChange, onRemove }: CartItemRowProps) {
   const itemTotal = (item.price_sell || 0) * item.cartQuantity
 
   return (
-    <div className="bg-white border border-slate-200 rounded-lg p-3 hover:border-slate-300 transition-colors">
-      <div className="flex items-start justify-between mb-2">
-        <div className="flex-1">
-          <p className="font-medium text-sm text-slate-900 line-clamp-1">{item.name}</p>
+    <div className="bg-white border border-slate-200 rounded-lg p-2 md:p-3 hover:border-slate-300 transition-colors">
+      <div className="flex items-start justify-between mb-1 md:mb-2">
+        <div className="flex-1 min-w-0">
+          <p className="font-medium text-xs md:text-sm text-slate-900 line-clamp-1">{item.name}</p>
           <p className="text-xs text-slate-500">{(item.price_sell || 0).toFixed(2)} ج.م</p>
         </div>
-        <button onClick={onRemove} className="text-slate-400 hover:text-red-600 transition-colors p-1">
-          <Trash2 className="w-4 h-4" />
+        <button onClick={onRemove} className="text-slate-400 hover:text-red-600 transition-colors p-1 ml-2">
+          <Trash2 className="w-3 md:w-4 h-3 md:h-4" />
         </button>
       </div>
 
       <div className="flex items-center justify-between">
         <div className="flex items-center border border-slate-200 rounded-lg">
-          <button onClick={() => onQuantityChange(item.cartQuantity - 1)} className="px-2 py-1 text-slate-600 hover:bg-slate-100">
+          <button onClick={() => onQuantityChange(item.cartQuantity - 1)} className="px-1.5 md:px-2 py-1 text-slate-600 hover:bg-slate-100">
             <Minus className="w-3 h-3" />
           </button>
-          <span className="px-3 py-1 text-sm font-semibold text-slate-900 min-w-[40px] text-center">{item.cartQuantity}</span>
-          <button onClick={() => onQuantityChange(item.cartQuantity + 1)} className="px-2 py-1 text-slate-600 hover:bg-slate-100">
+          <span className="px-2 md:px-3 py-0.5 md:py-1 text-xs md:text-sm font-semibold text-slate-900 min-w-[32px] md:min-w-[40px] text-center">{item.cartQuantity}</span>
+          <button onClick={() => onQuantityChange(item.cartQuantity + 1)} className="px-1.5 md:px-2 py-1 text-slate-600 hover:bg-slate-100">
             <Plus className="w-3 h-3" />
           </button>
         </div>
-        <span className="font-bold text-slate-900">{itemTotal.toFixed(2)} ج.م</span>
+        <span className="font-bold text-slate-900 text-xs md:text-sm">{itemTotal.toFixed(2)} ج.م</span>
       </div>
     </div>
   )

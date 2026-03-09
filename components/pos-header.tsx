@@ -120,15 +120,15 @@ export function POSHeader({ searchTerm, onSearchChange, selectedStore }: POSHead
   return (
     <div className="bg-white border-b border-slate-200 shadow-sm">
       {/* Top Bar */}
-      <div className="px-6 py-3 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white border-b border-slate-100">
-        <div className="flex items-center gap-6 text-sm text-slate-600">
+      <div className="px-3 md:px-6 py-2 md:py-3 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white border-b border-slate-100">
+        <div className="hidden md:flex items-center gap-6 text-sm text-slate-600">
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-blue-600" />
             <span>{currentTime}</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 md:gap-2">
           {/* Notifications Bell */}
           <div className="relative" ref={notifRef}>
             <button 
@@ -136,11 +136,11 @@ export function POSHeader({ searchTerm, onSearchChange, selectedStore }: POSHead
                 setShowNotifications(!showNotifications)
                 setShowUserMenu(false)
               }}
-              className="relative p-2 hover:bg-slate-100 rounded-lg transition-colors"
+              className="relative p-1.5 md:p-2 hover:bg-slate-100 rounded-lg transition-colors"
             >
-              <Bell className="w-5 h-5 text-slate-600" />
+              <Bell className="w-4 md:w-5 h-4 md:h-5 text-slate-600" />
               {lowStockProducts.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 w-4 md:w-5 h-4 md:h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
                   {lowStockProducts.length > 9 ? '9+' : lowStockProducts.length}
                 </span>
               )}
@@ -148,7 +148,7 @@ export function POSHeader({ searchTerm, onSearchChange, selectedStore }: POSHead
 
             {/* Notifications Dropdown */}
             {showNotifications && (
-              <div className="absolute left-0 mt-2 w-80 bg-white border border-slate-200 rounded-lg shadow-lg z-50 overflow-hidden">
+              <div className="absolute left-0 mt-2 w-72 md:w-80 bg-white border border-slate-200 rounded-lg shadow-lg z-50 overflow-hidden">
                 <div className="p-3 border-b border-slate-200 bg-slate-50">
                   <h3 className="font-semibold text-slate-900">التنبيهات</h3>
                   {lowStockProducts.length > 0 && (
@@ -206,16 +206,16 @@ export function POSHeader({ searchTerm, onSearchChange, selectedStore }: POSHead
                 setShowUserMenu(!showUserMenu)
                 setShowNotifications(false)
               }}
-              className="p-2 hover:bg-slate-100 rounded-lg transition-colors flex items-center gap-2"
+              className="p-1.5 md:p-2 hover:bg-slate-100 rounded-lg transition-colors flex items-center gap-2"
             >
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <User className="w-4 h-4 text-blue-600" />
+              <div className="w-7 md:w-8 h-7 md:h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <User className="w-3 md:w-4 h-3 md:h-4 text-blue-600" />
               </div>
             </button>
 
             {/* User Menu Dropdown */}
             {showUserMenu && (
-              <div className="absolute left-0 mt-2 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-50 overflow-hidden">
+              <div className="absolute left-0 mt-2 w-44 md:w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-50 overflow-hidden">
                 <div className="p-3 border-b border-slate-200">
                   <p className="font-medium text-slate-900">القائمة</p>
                 </div>
@@ -224,7 +224,7 @@ export function POSHeader({ searchTerm, onSearchChange, selectedStore }: POSHead
                   <Link 
                     href="/settings"
                     onClick={() => setShowUserMenu(false)}
-                    className="flex items-center gap-3 px-4 py-2 text-slate-700 hover:bg-slate-50 transition-colors"
+                    className="flex items-center gap-3 px-3 md:px-4 py-2 text-slate-700 hover:bg-slate-50 transition-colors text-sm"
                   >
                     <Settings className="w-4 h-4" />
                     <span>إعدادات المتجر</span>
@@ -233,7 +233,7 @@ export function POSHeader({ searchTerm, onSearchChange, selectedStore }: POSHead
                   <button
                     onClick={handleLogout}
                     disabled={loggingOut}
-                    className="w-full flex items-center gap-3 px-4 py-2 text-red-600 hover:bg-red-50 transition-colors"
+                    className="w-full flex items-center gap-3 px-3 md:px-4 py-2 text-red-600 hover:bg-red-50 transition-colors text-sm"
                   >
                     {loggingOut ? (
                       <>
@@ -255,21 +255,21 @@ export function POSHeader({ searchTerm, onSearchChange, selectedStore }: POSHead
       </div>
 
       {/* Search Bar */}
-      <div className="px-6 py-4 flex items-center gap-4">
-        <div className="flex-1 flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 hover:border-slate-300 focus-within:border-blue-500 focus-within:bg-white transition-colors">
-          <Search className="w-5 h-5 text-slate-400" />
+      <div className="px-3 md:px-6 py-3 md:py-4 flex items-center gap-2 md:gap-4">
+        <div className="flex-1 flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 md:px-4 py-2 hover:border-slate-300 focus-within:border-blue-500 focus-within:bg-white transition-colors">
+          <Search className="w-4 md:w-5 h-4 md:h-5 text-slate-400 flex-shrink-0" />
           <input
             type="text"
             placeholder="ابحث عن منتج..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="flex-1 bg-transparent outline-none text-slate-900 placeholder-slate-500"
+            className="flex-1 bg-transparent outline-none text-slate-900 placeholder-slate-500 text-sm"
           />
         </div>
 
-        <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg transition-colors font-medium">
-          <Barcode className="w-5 h-5" />
-          <span>ماسح باركود</span>
+        <button className="flex items-center gap-1 md:gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 md:px-4 py-2 rounded-lg transition-colors font-medium text-sm">
+          <Barcode className="w-4 md:w-5 h-4 md:h-5" />
+          <span className="hidden sm:inline">ماسح باركود</span>
         </button>
       </div>
     </div>

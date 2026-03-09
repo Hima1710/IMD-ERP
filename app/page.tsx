@@ -9,7 +9,7 @@ import { DashboardStats } from '@/components/dashboard-stats'
 import AdminDashboard from '@/components/AdminDashboard'
 import { supabase } from '@/lib/supabase'
 import { Product, ProductFormData, toProductUI } from '@/lib/types'
-import { ShoppingCart as CartIcon, Package } from 'lucide-react'
+import { ShoppingCart as CartIcon, Package, Menu, X, ShoppingBag } from 'lucide-react'
 
 export default function POSPage() {
   const [cartItems, setCartItems] = useState<Array<{ productId: string; quantity: number }>>([])
@@ -24,6 +24,10 @@ export default function POSPage() {
   const [isReady, setIsReady] = useState(false)
   const [user, setUser] = useState<any>(null)
   const [userRole, setUserRole] = useState<string>('cashier')
+  
+  // Responsive state
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [mobileCartOpen, setMobileCartOpen] = useState(false)
 
   // Extract phone number from user email (e.g., 01558905021@paintmaster.com -> 01558905021)
   const cashierPhone = user?.email ? user.email.split('@')[0] : ''
@@ -321,7 +325,7 @@ export default function POSPage() {
   }
 
   return (
-    <div className="flex h-screen bg-slate-50 text-slate-900 overflow-hidden">
+    <div className="flex h-screen bg-slate-50 text-slate-900 overflow-hidden" dir="rtl">
       {!isReady ? (
         // Loading screen while session initializes
         <div className="w-full h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900">
@@ -337,12 +341,46 @@ export default function POSPage() {
         </div>
       ) : (
         <>
-          {/* Sidebar - Right side for RTL */}
-          <Sidebar selectedStore={selectedStore} onStoreChange={setSelectedStore} />
+          {/* Mobile Sidebar Overlay */}
+          {sidebarOpen && (
+            <div className="fixed inset-0 z-40 md:hidden">
+              <div className="fixed inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
+              <div className="fixed inset-y-0 right-0 w-72">
+                <Sidebar selectedStore={selectedStore} onStoreChange={setSelectedStore} />
+              </div>
+            </div>
+          )}
+
+          {/* Sidebar - Desktop only */}
+          <div className="hidden md:block">
+            <Sidebar selectedStore={selectedStore} onStoreChange={setSelectedStore} />
+          </div>
 
           {/* Main Content */}
           <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Header */}
+            {/* Mobile Header */}
+            <div className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 shadow-sm">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200"
+              >
+                <Menu className="w-5 h-5 text-slate-700" />
+              </button>
+              <h1 className="text-lg font-bold text-slate-900">نقاط البيع</h1>
+              <button
+                onClick={() => setMobileCartOpen(true)}
+                className="relative p-2 rounded-lg bg-blue-600 hover:bg-blue-700"
+              >
+                <ShoppingBag className="w-5 h-5 text-white" />
+                {cartItems.length > 0 && (
+                  <span className="absolute -top-1 -left-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                    {cartItems.length}
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {/* Desktop Header */}
             <POSHeader
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
@@ -350,26 +388,14 @@ export default function POSPage() {
             />
 
             {/* Dashboard Stats */}
-            <div className="px-6 py-4 bg-slate-50">
+            <div className="px-4 md:px-6 py-4 bg-slate-50">
               <DashboardStats stats={stats} />
             </div>
 
-            {/* Main Content Area */}
-            <div className="flex-1 flex overflow-hidden">
-              {/* Left side: Shopping Cart */}
-              <div className="w-80 border-r border-slate-200 bg-white overflow-y-auto">
-                <ShoppingCart
-                  cartItems={cartItems}
-                  allProducts={productsForDisplay}
-                  onUpdateQuantity={handleUpdateQuantity}
-                  taxRate={taxRate}
-                  discountPercent={discountPercent}
-                  onDiscountChange={setDiscountPercent}
-                />
-              </div>
-
-              {/* Right side: Product Catalog */}
-              <div className="flex-1 overflow-y-auto p-6">
+            {/* Main Content Area - Responsive: Stack on mobile, side by side on desktop */}
+            <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+              {/* Product Catalog - Full width on mobile, left side on desktop */}
+              <div className="flex-1 overflow-y-auto p-4 md:p-6 order-2 md:order-1">
                 <ProductCatalog
                   products={filteredProducts}
                   selectedCategory={selectedCategory}
@@ -379,8 +405,48 @@ export default function POSPage() {
                   loading={loading}
                 />
               </div>
+
+              {/* Shopping Cart - Hidden on mobile (use bottom sheet), visible on desktop */}
+              <div className="hidden md:block w-80 border-r border-slate-200 bg-white overflow-y-auto order-2">
+                <ShoppingCart
+                  cartItems={cartItems}
+                  allProducts={productsForDisplay}
+                  onUpdateQuantity={handleUpdateQuantity}
+                  taxRate={taxRate}
+                  discountPercent={discountPercent}
+                  onDiscountChange={setDiscountPercent}
+                />
+              </div>
             </div>
           </div>
+
+          {/* Mobile Cart Bottom Sheet */}
+          {mobileCartOpen && (
+            <div className="fixed inset-0 z-50 md:hidden">
+              <div className="absolute inset-0 bg-black/50" onClick={() => setMobileCartOpen(false)} />
+              <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[90vh] overflow-hidden flex flex-col">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
+                  <h2 className="text-lg font-bold text-slate-900">سلة المشتريات</h2>
+                  <button
+                    onClick={() => setMobileCartOpen(false)}
+                    className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200"
+                  >
+                    <X className="w-5 h-5 text-slate-700" />
+                  </button>
+                </div>
+                <div className="flex-1 overflow-y-auto">
+                  <ShoppingCart
+                    cartItems={cartItems}
+                    allProducts={productsForDisplay}
+                    onUpdateQuantity={handleUpdateQuantity}
+                    taxRate={taxRate}
+                    discountPercent={discountPercent}
+                    onDiscountChange={setDiscountPercent}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>

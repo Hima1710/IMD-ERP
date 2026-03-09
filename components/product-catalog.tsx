@@ -63,23 +63,24 @@ export function ProductCatalog({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Header with Add Product Button */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold text-slate-900">المنتجات</h2>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <h2 className="text-lg md:text-xl font-bold text-slate-900">المنتجات</h2>
         {onAddProduct && (
           <button
             onClick={() => setShowAddModal(true)}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+            className="bg-green-600 hover:bg-green-700 text-white px-3 md:px-4 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm"
           >
             <Plus className="w-4 h-4" />
-            إضافة منتج جديد
+            <span className="hidden sm:inline">إضافة منتج جديد</span>
+            <span className="sm:hidden">إضافة</span>
           </button>
         )}
       </div>
 
       {/* Products Grid - Show all products directly without category filtering */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
         {loading ? (
           <div className="col-span-full text-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -229,29 +230,29 @@ function ProductCard({ product, onAddToCart }: ProductCardProps) {
   return (
     <div className="bg-white border border-slate-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
       {/* Image */}
-      <div className="w-full h-40 bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center relative">
-        <div className="text-3xl">📦</div>
+      <div className="w-full h-28 md:h-40 bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center relative">
+        <div className="text-2xl md:text-3xl">📦</div>
         {isOutOfStock && (
           <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-            <span className="text-white font-bold">غير متوفر</span>
+            <span className="text-white font-bold text-xs md:text-sm">غير متوفر</span>
           </div>
         )}
       </div>
 
       {/* Content */}
-      <div className="p-3 space-y-2">
+      <div className="p-2 md:p-3 space-y-1 md:space-y-2">
         <div className="space-y-1">
-          <h3 className="font-semibold text-slate-900 text-sm line-clamp-1">{displayProduct.name}</h3>
-          <p className="text-xs text-slate-500">{displayProduct.category}</p>
+          <h3 className="font-semibold text-slate-900 text-xs md:text-sm line-clamp-1">{displayProduct.name}</h3>
+          <p className="text-xs text-slate-500 hidden md:block">{displayProduct.category}</p>
         </div>
 
         {/* Price & Stock */}
         <div className="space-y-1">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-slate-900">{(displayProduct.price_sell || 0).toFixed(2)} ج.م</p>
+              <p className="text-xs md:text-sm font-bold text-slate-900">{(displayProduct.price_sell || 0).toFixed(2)} ج.م</p>
             </div>
-            <span className="text-xs bg-slate-100 px-2 py-1 rounded text-slate-600">
+            <span className="text-xs bg-slate-100 px-1.5 md:px-2 py-0.5 md:py-1 rounded text-slate-600">
               {displayProduct.stock} {displayProduct.unit}
             </span>
           </div>
@@ -261,13 +262,13 @@ function ProductCard({ product, onAddToCart }: ProductCardProps) {
         <button
           onClick={() => onAddToCart(product.id)}
           disabled={isOutOfStock}
-          className={`w-full flex items-center justify-center gap-2 py-2 rounded-lg font-medium transition-colors text-sm ${
+          className={`w-full flex items-center justify-center gap-1 md:gap-2 py-1.5 md:py-2 rounded-lg font-medium transition-colors text-xs md:text-sm ${
             isOutOfStock
               ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
               : 'bg-blue-600 hover:bg-blue-700 text-white'
           }`}
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-3 md:w-4 h-3 md:h-4" />
           <span>إضافة</span>
         </button>
       </div>

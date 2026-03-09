@@ -31,11 +31,11 @@ export function DashboardStats({ stats }: DashboardStatsProps) {
 
 function StatCard({ stat }: { stat: StatCard }) {
   return (
-    <div className={`bg-white rounded-lg border border-slate-200 p-4 hover:shadow-md transition-shadow`}>
+    <div className={`bg-white rounded-lg border border-slate-200 p-3 md:p-4 hover:shadow-md transition-shadow`}>
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <p className="text-xs text-slate-500 mb-1">{stat.labelAr}</p>
-          <p className="text-2xl font-bold text-slate-900 mb-2">{stat.value}</p>
+          <p className="text-xl md:text-2xl font-bold text-slate-900 mb-2">{stat.value}</p>
           {stat.trend !== undefined && (
             <div className="flex items-center gap-1">
               <TrendingUp className={`w-3 h-3 ${stat.trend >= 0 ? 'text-green-600' : 'text-red-600'}`} />
@@ -45,7 +45,7 @@ function StatCard({ stat }: { stat: StatCard }) {
             </div>
           )}
         </div>
-        <div className={`${stat.color} p-3 rounded-lg`}>
+        <div className={`${stat.color} p-2 md:p-3 rounded-lg`}>
           {stat.icon}
         </div>
       </div>
