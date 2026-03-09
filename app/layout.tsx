@@ -12,22 +12,21 @@ export const metadata: Metadata = {
   title: 'IMD ERP - نظام إدارة المستودع',
   description: 'Professional Warehouse Management System - By Eng. Ibrahim Mabrouk El-Deeb',
   generator: 'v0.app',
-  icons: {
+  manifest: '/manifest.json',
+icons: {
     icon: [
       {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
+        url: '/imd-logo.jpeg',
+        sizes: '192x192',
+        type: 'image/jpeg',
       },
       {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
+        url: '/imd-logo.jpeg',
+        sizes: '512x512',
+        type: 'image/jpeg',
       },
     ],
-    apple: '/apple-icon.png',
+    apple: '/imd-logo.jpeg',
   },
 }
 
