@@ -22,42 +22,47 @@ interface SidebarProps {
 
 export function Sidebar({ selectedStore = 'settings', onStoreChange }: SidebarProps) {
   const router = useRouter()
-  const { store: globalStore } = useStore()
+  const { store: globalStore, user, checkUser } = useStore()
   const [loggingOut, setLoggingOut] = useState(false)
   const [userLabel, setUserLabel] = useState<string>('')
 
+  // Load user label from centralized user
   useEffect(() => {
-    async function loadUser() {
-      const { data, error } = await supabase.auth.getUser()
-      if (error) {
-        console.error('Failed to fetch user', error)
+    async function loadUserLabel() {
+      // Use centralized user from useStore if available
+      if (user) {
+        const raw = user.email || user.phone || ''
+        const label = raw.includes('@') ? raw.split('@')[0] : raw
+        setUserLabel(label)
         return
       }
-      if (data.user) {
-        // prefer phone or email
-        const raw = data.user.email || data.user.phone || ''
+      
+      // Otherwise use checkUser
+      const currentUser = await checkUser()
+      if (currentUser) {
+        const raw = currentUser.email || currentUser.phone || ''
         const label = raw.includes('@') ? raw.split('@')[0] : raw
         setUserLabel(label)
       }
     }
-    loadUser()
-  }, [])
+    loadUserLabel()
+  }, [user, checkUser])
 
   const handleLogout = async () => {
+    if (!supabase) return
     setLoggingOut(true)
     try {
       await supabase.auth.signOut()
       router.push('/login')
     } catch (error) {
       console.error('Error signing out:', error)
-      // You could show an error toast here if needed
     } finally {
       setLoggingOut(false)
     }
   }
 
   return (
-    <div className="w-72 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white flex flex-col shadow-lg">
+<div className="w-72 h-screen sticky top-0 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white flex flex-col shadow-lg justify-between">
       {/* Logo/Brand */}
       <div className="p-6 border-b border-slate-700">
         <div className="flex items-center gap-3 mb-4">
@@ -75,8 +80,6 @@ export function Sidebar({ selectedStore = 'settings', onStoreChange }: SidebarPr
         </div>
         <p className="text-xs text-slate-500">By Eng. Ibrahim Mabrouk El-Deeb</p>
       </div>
-
-
 
       {/* Navigation */}
       <nav className="flex-1 px-2 py-6 space-y-2 overflow-y-auto">

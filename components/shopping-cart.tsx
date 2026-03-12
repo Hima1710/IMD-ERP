@@ -5,6 +5,7 @@ import { Trash2, Plus, Minus, CreditCard, ReceiptText, X, Printer, CheckCircle, 
 import { Product } from '@/lib/types'
 import { supabase } from '@/lib/supabase'
 import { useStore } from '@/hooks/use-store'
+import { saveTransactionOffline, isOnline, getPendingSyncCount } from '@/lib/offline-db'
 import Invoice from './Invoice'
 
 interface CartItem {
@@ -40,7 +41,7 @@ export function ShoppingCart({
   const [showReceiptModal, setShowReceiptModal] = useState(false)
   const [showInvoice, setShowInvoice] = useState(false)
   const [currentSaleId, setCurrentSaleId] = useState<string | null>(null)
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('cash')
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'credit'>('cash')
   const [amountPaid, setAmountPaid] = useState<number>(0)
   const [changeAmount, setChangeAmount] = useState<number>(0)
   const [isProcessing, setIsProcessing] = useState(false)
@@ -100,7 +101,8 @@ export function ShoppingCart({
       setLoadingCustomers(true)
       
       // Get user and store_id
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: userData } = await supabase.auth.getUser()
+      const user = userData?.user
       if (!user) return
 
       const { data: profile } = await supabase
@@ -184,21 +186,26 @@ export function ShoppingCart({
       .filter(Boolean) as (Product & { cartQuantity: number })[]
   }, [cartItems, allProducts])
 
+  // Use price (selling price) instead of price_sell
   const subtotal = useMemo(() => {
-    return cartProducts.reduce((sum, item) => sum + (item.price_sell || 0) * item.cartQuantity, 0)
+    return cartProducts.reduce((sum, item) => sum + (Number(item.price) || 0) * item.cartQuantity, 0)
   }, [cartProducts])
 
   const discountAmount = subtotal * (discountPercent / 100)
   const total = subtotal - discountAmount
   const remainingAmount = Math.max(0, total - amountPaid)
 
-  const handlePaymentMethodChange = (method: 'cash' | 'card') => {
+  const handlePaymentMethodChange = (method: 'cash' | 'card' | 'credit') => {
     setPaymentMethod(method)
     if (method === 'cash') {
       setAmountPaid(total)
       setChangeAmount(0)
+    } else if (method === 'card') {
+      // Card means credit/payment later - for customer
+      setAmountPaid(0)
+      setChangeAmount(0)
     } else {
-      setAmountPaid(total)
+      setAmountPaid(0)
       setChangeAmount(0)
     }
   }
@@ -240,14 +247,121 @@ export function ShoppingCart({
       // Get store info
       let storeName = globalStore.name || 'متجر الدهانات'
       
+      // ============================================================
+      // OFFLINE PAYMENT HANDLING
+      // ============================================================
+      if (!isOnline()) {
+        // We're offline - save to local Dexie database
+        
+        // Get shop_id (we need this for offline storage)
+        let shopIdForOffline = shopId
+        
+        if (!shopIdForOffline && supabaseClient) {
+          try {
+            const { data: { user } } = await supabaseClient.auth.getUser()
+            if (user) {
+              const { data: profile } = await supabaseClient
+                .from('profiles')
+                .select('shop_id')
+                .eq('id', user.id)
+                .single()
+              shopIdForOffline = profile?.shop_id || 'offline-shop'
+            }
+          } catch (e) {
+            shopIdForOffline = 'offline-shop'
+          }
+        } else if (!shopIdForOffline) {
+          shopIdForOffline = 'offline-shop'
+        }
+
+        const saleItems = cartProducts.map(item => ({
+          product_id: item.id,
+          product_name: item.name,
+          quantity: item.cartQuantity,
+          unit_price: Number(item.price),
+          total_price: (Number(item.price) || 0) * item.cartQuantity,
+        }))
+
+        const finalAmount = Number(total)
+        const paid = Number(amountPaid || 0)
+        const remaining = finalAmount - paid
+
+        let paymentMethodToSave = paymentMethod
+        let amountPaidToSave = amountPaid
+        let remainingAmountToSave = remaining
+
+        if (paymentMethod === 'card' && selectedCustomer) {
+          paymentMethodToSave = 'credit'
+          amountPaidToSave = 0
+          remainingAmountToSave = finalAmount
+        }
+
+        // Save transaction to offline store
+        const localId = await saveTransactionOffline({
+          shop_id: shopIdForOffline,
+          customer_id: selectedCustomer?.id || null,
+          total_amount: finalAmount,
+          amount_paid: amountPaidToSave,
+          remaining_amount: remainingAmountToSave,
+          final_amount: finalAmount,
+          discount_amount: Number(discountAmount),
+          payment_method: paymentMethodToSave,
+          change_amount: Number(paymentMethod === 'card' && selectedCustomer ? 0 : changeAmount),
+          items: saleItems,
+          sale_date: new Date().toISOString(),
+        })
+
+        // Reduce stock locally (for offline mode)
+        for (const item of cartProducts) {
+          const newStock = (item.stock || 0) - item.cartQuantity
+          console.log(`Offline: Reducing stock for ${item.name} from ${item.stock} to ${newStock}`)
+        }
+
+        // Show success message
+        const toastMessage = 'تم الحفظ محلياً (أوفلاين) ✓\nسيتم المزامنة تلقائياً عند الاتصال بالإنترنت'
+        
+        setLastSale({
+          saleId: 'OFFLINE-' + localId,
+          items: cartProducts.map(item => ({
+            name: item.name,
+            quantity: item.cartQuantity,
+            price: Number(item.price),
+            total: (Number(item.price) || 0) * item.cartQuantity,
+          })),
+          subtotal,
+          discountAmount,
+          total,
+          paymentMethod,
+          amountPaid,
+          changeAmount,
+          remainingAmount: Math.max(0, total - amountPaid),
+          date: new Date().toLocaleString('ar-EG') + ' (أوفلاين)',
+          customerName: selectedCustomer?.name,
+          customerPhone: selectedCustomer?.phone,
+          storeName: storeName,
+          isOffline: true,
+        })
+
+        setShowPaymentModal(false)
+        setShowInvoice(true)
+        setIsProcessing(false)
+        
+        alert(toastMessage)
+        return
+      }
+
+      // ============================================================
+      // ONLINE PAYMENT HANDLING (Original Logic)
+      // ============================================================
+      
       if (!supabaseClient) {
         setLastSale({
           saleId: 'LOCAL-' + Date.now(),
           items: cartProducts.map(item => ({
             name: item.name,
             quantity: item.cartQuantity,
-            price: item.price_sell,
-            total: (item.price_sell || 0) * item.cartQuantity,
+            price: Number(item.price),
+            total: (Number(item.price) || 0) * item.cartQuantity,
           })),
           subtotal,
           discountAmount,
@@ -271,8 +385,8 @@ export function ShoppingCart({
         product_id: item.id,
         product_name: item.name,
         quantity: item.cartQuantity,
-        unit_price: item.price_sell,
-        total_price: (item.price_sell || 0) * item.cartQuantity,
+        unit_price: Number(item.price),
+        total_price: (Number(item.price) || 0) * item.cartQuantity,
       }))
 
       const { data: { user } } = await supabaseClient.auth.getUser()
@@ -309,16 +423,26 @@ export function ShoppingCart({
       const paid = Number(amountPaid || 0)
       const remaining = finalAmount - paid
 
+      let paymentMethodToSave = paymentMethod
+      let amountPaidToSave = amountPaid
+      let remainingAmountToSave = remaining
+
+      if (paymentMethod === 'card' && selectedCustomer) {
+        paymentMethodToSave = 'credit'
+        amountPaidToSave = 0
+        remainingAmountToSave = finalAmount
+      }
+
       const { data: saleData, error: saleError } = await supabaseClient
         .from('transactions')
         .insert([{
           total_amount: finalAmount,
-          amount_paid: paid,
-          remaining_amount: remaining,
+          amount_paid: amountPaidToSave,
+          remaining_amount: remainingAmountToSave,
           final_amount: finalAmount,
           discount_amount: Number(discountAmount),
-          payment_method: paymentMethod,
-          change_amount: Number(changeAmount),
+          payment_method: paymentMethodToSave,
+          change_amount: Number(paymentMethod === 'card' && selectedCustomer ? 0 : changeAmount),
           customer_id: selectedCustomer?.id || null,
           items: saleItems,
           sale_date: new Date().toISOString(),
@@ -348,8 +472,8 @@ export function ShoppingCart({
         items: cartProducts.map(item => ({
           name: item.name,
           quantity: item.cartQuantity,
-          price: item.price_sell,
-          total: (item.price_sell || 0) * item.cartQuantity,
+          price: Number(item.price),
+          total: (Number(item.price) || 0) * item.cartQuantity,
         })),
         subtotal,
         discountAmount,
@@ -384,8 +508,8 @@ export function ShoppingCart({
       items: cartProducts.map(item => ({
         name: item.name,
         quantity: item.cartQuantity,
-        price: item.price_sell,
-        total: (item.price_sell || 0) * item.cartQuantity,
+        price: Number(item.price),
+        total: (Number(item.price) || 0) * item.cartQuantity,
       })),
       subtotal,
       discountAmount,
@@ -536,7 +660,6 @@ export function ShoppingCart({
                       <div className="p-3 text-center text-slate-500 text-sm">لا توجد نتائج</div>
                     )}
                     
-                    {/* Add New Customer Button */}
                     <button
                       onClick={() => {
                         setShowCustomerDropdown(false)
@@ -551,7 +674,6 @@ export function ShoppingCart({
                 )}
               </div>
 
-              {/* Selected Customer Badge */}
               {selectedCustomer && (
                 <div className="mt-2 flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
                   <span className="text-sm text-green-700">✓ {selectedCustomer.name}</span>
@@ -696,50 +818,20 @@ export function ShoppingCart({
       )}
 
       {showInvoice && lastSale && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-4 w-full max-w-sm mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold text-slate-900">ايصال الفاتورة</h3>
-              {currentSaleId && (
-                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                  #{currentSaleId.slice(0, 8)}
-                </span>
-              )}
-            </div>
-
-            <Invoice
-              onClose={handleCloseInvoice}
-              items={lastSale.items}
-              subtotal={lastSale.subtotal}
-              discountAmount={lastSale.discountAmount}
-              total={lastSale.total}
-              paymentMethod={lastSale.paymentMethod}
-              amountPaid={lastSale.amountPaid}
-              changeAmount={lastSale.changeAmount}
-              date={lastSale.date}
-              invoiceId={lastSale.saleId}
-              customerName={lastSale.customerName}
-              customerPhone={lastSale.customerPhone}
-            />
-
-            <div className="flex gap-2 mt-4">
-              <button
-                onClick={printReceipt}
-                className="flex-1 bg-slate-600 hover:bg-slate-700 text-white py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
-              >
-                <Printer className="w-4 h-4" />
-                طباعة
-              </button>
-              <button
-                onClick={handleCloseInvoice}
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
-              >
-                <CheckCircle className="w-4 h-4" />
-                تم
-              </button>
-            </div>
-          </div>
-        </div>
+        <Invoice
+          onClose={handleCloseInvoice}
+          items={lastSale.items}
+          subtotal={lastSale.subtotal}
+          discountAmount={lastSale.discountAmount}
+          total={lastSale.total}
+          paymentMethod={lastSale.paymentMethod}
+          amountPaid={lastSale.amountPaid}
+          changeAmount={lastSale.changeAmount}
+          date={lastSale.date}
+          invoiceId={lastSale.saleId}
+          customerName={lastSale.customerName}
+          customerPhone={lastSale.customerPhone}
+        />
       )}
 
       {showReceiptModal && lastSale && (
@@ -796,14 +888,15 @@ interface CartItemRowProps {
 }
 
 function CartItemRow({ item, onQuantityChange, onRemove }: CartItemRowProps) {
-  const itemTotal = (item.price_sell || 0) * item.cartQuantity
+  // Use price (selling price) instead of price_sell
+  const itemTotal = (Number(item.price) || 0) * item.cartQuantity
 
   return (
     <div className="bg-white border border-slate-200 rounded-xl p-2 md:p-3 hover:border-slate-300 transition-colors shadow-sm">
       <div className="flex items-start justify-between mb-1 md:mb-2">
         <div className="flex-1 min-w-0">
           <p className="font-medium text-xs md:text-sm text-slate-900 line-clamp-1">{item.name}</p>
-          <p className="text-xs text-slate-500">{(item.price_sell || 0).toFixed(2)} ج.م</p>
+          <p className="text-xs text-slate-500">{(Number(item.price) || 0).toFixed(2)} ج.م</p>
         </div>
         <button onClick={onRemove} className="text-slate-400 hover:text-red-600 transition-colors p-1 ml-2">
           <Trash2 className="w-3 md:w-4 h-3 md:h-4" />

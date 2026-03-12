@@ -535,7 +535,7 @@ export default function ReportsPage() {
               </button>
             </div>
 
-            <Invoice {...getInvoiceData(selectedSale)} />
+<Invoice {...getInvoiceData(selectedSale)} onClose={() => setSelectedSale(null)} />
 
             <div className="flex gap-2 mt-4">
               <button onClick={() => window.print()} className="flex-1 bg-slate-600 hover:bg-slate-700 text-white py-2.5 rounded-xl font-medium flex items-center justify-center gap-2">

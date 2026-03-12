@@ -13,8 +13,10 @@ interface StoreData {
 
 interface StoreContextType {
   store: StoreData
+  user: any
   loading: boolean
   refreshStore: () => Promise<void>
+  checkUser: () => Promise<any>
 }
 
 const defaultStore: StoreData = {
@@ -26,8 +28,10 @@ const defaultStore: StoreData = {
 
 const StoreContext = createContext<StoreContextType>({
   store: defaultStore,
+  user: null,
   loading: true,
   refreshStore: async () => {},
+  checkUser: async () => null,
 })
 
 export function useStore() {
@@ -40,7 +44,30 @@ interface StoreProviderProps {
 
 export function StoreProvider({ children }: StoreProviderProps) {
   const [store, setStore] = useState<StoreData>(defaultStore)
+  const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+
+  // Centralized user check - ONLY place that calls supabase.auth.getUser()
+  const checkUser = async () => {
+    try {
+      if (!supabase) {
+        return null
+      }
+      
+      const { data: { user: currentUser }, error } = await supabase.auth.getUser()
+      
+      if (error) {
+        console.error('checkUser error:', error)
+        return null
+      }
+      
+      setUser(currentUser)
+      return currentUser
+    } catch (err) {
+      console.error('checkUser exception:', err)
+      return null
+    }
+  }
 
   const fetchStore = async () => {
     try {
@@ -50,14 +77,15 @@ export function StoreProvider({ children }: StoreProviderProps) {
       }
 
       // Try to get user with retries
-      let user = null
+      let currentUser = null
       let retries = 0
       const maxRetries = 5
 
-      while (!user && retries < maxRetries) {
+      while (!currentUser && retries < maxRetries) {
         const { data: { session } } = await supabase.auth.getSession()
         if (session?.user) {
-          user = session.user
+          currentUser = session.user
+          setUser(currentUser)
           break
         }
         retries++
@@ -66,19 +94,19 @@ export function StoreProvider({ children }: StoreProviderProps) {
         }
       }
 
-      if (!user) {
+      if (!currentUser) {
         console.log('useStore: No user session found')
         setLoading(false)
         return
       }
 
-      console.log('📥 [STORE] Fetching profile for user:', user.id)
+      console.log('📥 [STORE] Fetching profile for user:', currentUser.id)
 
       // Fetch from profiles table to get shop_id
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('shop_id, full_name')
-        .eq('id', user.id)
+        .eq('id', currentUser.id)
         .single()
 
       if (profileError) {
@@ -140,9 +168,8 @@ export function StoreProvider({ children }: StoreProviderProps) {
   }
 
   return (
-    <StoreContext.Provider value={{ store, loading, refreshStore }}>
+    <StoreContext.Provider value={{ store, user, loading, refreshStore, checkUser }}>
       {children}
     </StoreContext.Provider>
   )
 }
-

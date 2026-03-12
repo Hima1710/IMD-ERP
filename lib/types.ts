@@ -4,8 +4,8 @@ export interface Product {
   name: string
   category: string
   unit: string
-  price_buy: number
-  price_sell: number
+  price: number       // Selling price (سعر البيع)
+  price_buy: number   // Cost price (سعر التكلفة)
   stock: number
   min_quantity: number
   image_url?: string
@@ -15,14 +15,10 @@ export interface Product {
 }
 
 // For UI display - add computed properties
-export interface ProductUI extends Product {
-  price: number
+export interface ProductUI extends Omit<Product, 'stock' | 'name'> {
   quantity: number
   in_stock: boolean
   name_ar: string
-  price_sell: number
-  stock: number
-  unit: string
 }
 
 export type ProductFormData = Omit<Product, 'id' | 'created_at' | 'updated_at'>
@@ -31,7 +27,7 @@ export type ProductFormData = Omit<Product, 'id' | 'created_at' | 'updated_at'>
 export function toProductUI(p: Product): ProductUI {
   return {
     ...p,
-    price: p.price_sell,
+    price: Number(p.price) || 0,  // Use 'price' from database as selling price
     quantity: p.stock,
     in_stock: p.stock > 0,
     name_ar: p.name,

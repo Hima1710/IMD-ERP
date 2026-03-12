@@ -168,8 +168,8 @@ export default function POSPage() {
         category: item.category || '',
         unit: item.unit || 'قطعة',
         // Use 'price' from database and map to both price_buy and price_sell
-        price_buy: parseFloat(item.price) || parseFloat(item.price_buy) || 0,
-        price_sell: parseFloat(item.price) || parseFloat(item.price_sell) || 0,
+        price: Number(item.price) || 0,
+        price_buy: Number(item.price_buy) || 0,
         stock: parseInt(item.stock || item.quantity) || 0,
         min_quantity: parseInt(item.min_quantity) || 0,
         created_at: item.created_at,
@@ -224,8 +224,8 @@ export default function POSPage() {
             category: productData.category,
             unit: productData.unit,
             // التعديل هنا: نربط السعر بأسماء الأعمدة الحقيقية في جدولك
-            price: productData.price_sell,     // السعر اللي العميل بيشتري بيه
-            cost_price: productData.price_buy, // سعر التكلفة عليك
+            price: productData.price,
+            price_buy: productData.price_buy,
             stock: productData.stock,
             min_quantity: productData.min_quantity,
             shop_id: profile.shop_id
@@ -423,7 +423,7 @@ export default function POSPage() {
           {mobileCartOpen && (
             <div className="fixed inset-0 z-50 md:hidden">
               <div className="absolute inset-0 bg-black/50" onClick={() => setMobileCartOpen(false)} />
-              <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+              <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl h-[90vh] flex flex-col shadow-2xl z-50 pt-safe pb-20 md:pb-6">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-slate-50 rounded-t-2xl">
                   <h2 className="text-lg font-bold text-slate-900">سلة المشتريات</h2>
                   <button

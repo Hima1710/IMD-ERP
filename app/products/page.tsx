@@ -5,9 +5,11 @@ import { Sidebar } from '@/components/sidebar'
 import { POSHeader } from '@/components/pos-header'
 import { BottomNav } from '@/components/BottomNav'
 import { MobileNav, FloatingMenuButton } from '@/components/MobileNav'
+
 import { supabase } from '@/lib/supabase'
 import { Product } from '@/lib/types'
-import { 
+import { useStore } from '@/hooks/use-store'
+import {
   Search, 
   Plus, 
   Trash2, 
@@ -25,9 +27,27 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
+
   const [shopId, setShopId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+
+  // Add Product Modal State
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [newProduct, setNewProduct] = useState({
+    name: '',
+    category: '',
+    unit: 'قطعة',
+    price_buy: 0,
+    price: 0,
+    stock: 0,
+    min_quantity: 5
+  })
+  const [savingProduct, setSavingProduct] = useState(false)
+
+  // Use centralized auth
+  const { checkUser } = useStore()
+
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -192,7 +212,11 @@ export default function ProductsPage() {
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                 <span className="hidden sm:inline">تحديث</span>
               </button>
-              <button className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors font-medium w-full sm:w-auto">
+
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors font-medium w-full sm:w-auto"
+              >
                 <Plus className="w-5 h-5" />
                 <span className="sm:hidden">إضافة</span>
                 <span className="hidden sm:inline">إضافة منتج</span>
@@ -258,7 +282,7 @@ export default function ProductsPage() {
                         </div>
                         <p className="text-sm text-slate-500">{product.category || 'بدون فئة'}</p>
                         <div className="flex justify-between items-center mt-2">
-                          <span className="font-bold text-slate-900">{(product.price_sell || 0).toFixed(2)} ج.م</span>
+                          <span className="font-bold text-slate-900">{Number(product.price || 0).toFixed(2)} ج.م</span>
                           <span className={`text-sm ${isLowStock(product) ? 'text-red-600 font-semibold' : 'text-slate-600'}`}>
                             المخزون: {product.stock || 0}
                           </span>
@@ -323,7 +347,7 @@ export default function ProductsPage() {
                           <td className="px-4 py-3 text-slate-600">{product.category || '-'}</td>
                           <td className="px-4 py-3 text-slate-600">{product.unit || '-'}</td>
                           <td className="px-4 py-3">
-                            <span className="font-semibold text-slate-900">{(product.price_sell || 0).toFixed(2)} ج.م</span>
+                            <span className="font-semibold text-slate-900">{Number(product.price || 0).toFixed(2)} ج.م</span>
                           </td>
                           <td className="px-4 py-3">
                             <span className={`font-semibold ${isLowStock(product) ? 'text-red-600' : 'text-slate-900'}`}>
@@ -375,8 +399,173 @@ export default function ProductsPage() {
         </div>
       </div>
 
+
       {/* Bottom Navigation */}
       <BottomNav cartCount={0} />
+
+      {/* Add Product Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+              <h3 className="text-lg font-bold">إضافة منتج جديد</h3>
+              <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-slate-100 rounded-lg">
+                <span className="text-2xl">&times;</span>
+              </button>
+            </div>
+            
+            <div className="p-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">اسم المنتج *</label>
+                <input
+                  type="text"
+                  value={newProduct.name}
+                  onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                  placeholder="أدخل اسم المنتج"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">الفئة</label>
+                <input
+                  type="text"
+                  value={newProduct.category}
+                  onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                  placeholder="أدخل الفئة"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">سعر البيع (بيع) *</label>
+                  <input
+                    type="number"
+                    value={newProduct.price}
+                    onChange={(e) => setNewProduct({ ...newProduct, price: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">سعر التكلفة (تكلفة)</label>
+                  <input
+                    type="number"
+                    value={newProduct.price_buy}
+                    onChange={(e) => setNewProduct({ ...newProduct, price_buy: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">الكمية</label>
+                  <input
+                    type="number"
+                    value={newProduct.stock}
+                    onChange={(e) => setNewProduct({ ...newProduct, stock: parseInt(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">الحد الأدنى</label>
+                  <input
+                    type="number"
+                    value={newProduct.min_quantity}
+                    onChange={(e) => setNewProduct({ ...newProduct, min_quantity: parseInt(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                    placeholder="5"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">الوحدة</label>
+                <select
+                  value={newProduct.unit}
+                  onChange={(e) => setNewProduct({ ...newProduct, unit: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                >
+                  <option value="قطعة">قطعة</option>
+                  <option value="كيلو">كيلو</option>
+                  <option value=" لتر">لتر</option>
+                  <option value="متر">متر</option>
+                  <option value="كيس">كيس</option>
+                  <option value="صندوق">صندوق</option>
+                </select>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => setShowAddModal(false)}
+                  className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50"
+                >
+                  إلغاء
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!newProduct.name.trim()) {
+                      alert('يرجى إدخال اسم المنتج')
+                      return
+                    }
+                    if (!shopId || !supabase) {
+                      alert('خطأ في النظام')
+                      return
+                    }
+                    
+                    setSavingProduct(true)
+                    try {
+                      const { error: insertError } = await supabase
+                        .from('products')
+                        .insert([{
+                          shop_id: shopId,
+                          name: newProduct.name.trim(),
+                          category: newProduct.category.trim() || null,
+                          unit: newProduct.unit,
+                          price: Number(newProduct.price),
+                          price_buy: Number(newProduct.price_buy),
+                          stock: Number(newProduct.stock),
+                          min_quantity: Number(newProduct.min_quantity)
+                        }])
+
+                      if (insertError) {
+                        alert('خطأ في إضافة المنتج: ' + insertError.message)
+                        return
+                      }
+
+                      // Clear form and close modal on success
+                      setNewProduct({
+                        name: '',
+                        category: '',
+                        unit: 'قطعة',
+                        price: 0,
+                        price_buy: 0,
+                        stock: 0,
+                        min_quantity: 5
+                      })
+                      setShowAddModal(false)
+                      fetchProducts()
+                    } catch (err) {
+                      console.error('Error adding product:', err)
+                      alert('حدث خطأ')
+                    } finally {
+                      setSavingProduct(false)
+                    }
+                  }}
+                  disabled={savingProduct}
+                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50"
+                >
+                  {savingProduct ? 'جاري...' : 'إضافة'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

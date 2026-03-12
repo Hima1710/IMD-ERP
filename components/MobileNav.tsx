@@ -25,23 +25,31 @@ interface MobileNavProps {
 export function MobileNav({ isOpen, onClose }: MobileNavProps) {
   const router = useRouter()
   const pathname = usePathname()
-  const { store: globalStore } = useStore()
+  const { store: globalStore, user, checkUser } = useStore()
   const [loggingOut, setLoggingOut] = useState(false)
   const [userLabel, setUserLabel] = useState<string>('')
 
+  // Load user label from centralized user
   useEffect(() => {
-    async function loadUser() {
-      if (!supabase) return
-      const { data, error } = await supabase.auth.getUser()
-      if (error) return
-      if (data.user) {
-        const raw = data.user.email || data.user.phone || ''
+    async function loadUserLabel() {
+      // Use centralized user from useStore if available
+      if (user) {
+        const raw = user.email || user.phone || ''
+        const label = raw.includes('@') ? raw.split('@')[0] : raw
+        setUserLabel(label)
+        return
+      }
+      
+      // Otherwise use checkUser
+      const currentUser = await checkUser()
+      if (currentUser) {
+        const raw = currentUser.email || currentUser.phone || ''
         const label = raw.includes('@') ? raw.split('@')[0] : raw
         setUserLabel(label)
       }
     }
-    loadUser()
-  }, [])
+    loadUserLabel()
+  }, [user, checkUser])
 
   const handleLogout = async () => {
     if (!supabase) return
@@ -160,7 +168,7 @@ export function MobileNav({ isOpen, onClose }: MobileNavProps) {
       </div>
 
       <style jsx>{`
-        @keyframes slide-in-right {
+        @keyframes slideInRight {
           from {
             transform: translateX(-100%);
           }
@@ -169,7 +177,7 @@ export function MobileNav({ isOpen, onClose }: MobileNavProps) {
           }
         }
         .animate-slide-in-right {
-          animation: slide-in-right 0.3s ease-out;
+          animation: slideInRight 0.3s ease-out;
         }
       `}</style>
     </>
@@ -181,7 +189,7 @@ export function FloatingMenuButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="fixed top-4 right-4 z-30 md:hidden bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg"
+      className="fixed top-4 right-4 z-30 hidden bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg"
     >
       <Menu className="w-6 h-6" />
     </button>

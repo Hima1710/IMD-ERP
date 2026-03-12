@@ -1,7 +1,8 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono, Cairo } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { StoreProvider } from '@/hooks/use-store'
+import { OfflineIndicator } from '@/components/OfflineIndicator'
 import './globals.css'
 
 const _geist = Geist({ subsets: ["latin"], variable: '--font-geist' });
@@ -10,10 +11,15 @@ const _cairo = Cairo({ subsets: ["latin", "arabic"], variable: '--font-cairo' })
 
 export const metadata: Metadata = {
   title: 'IMD ERP - نظام إدارة المستودع',
-  description: 'Professional Warehouse Management System - By Eng. Ibrahim Mabrouk El-Deeb',
+  description: 'Professional Warehouse Management System - نظام إدارة المستودع والمبيعات - By Eng. Ibrahim Mabrouk El-Deeb',
   generator: 'v0.app',
-  manifest: '/manifest.json',
-icons: {
+
+  applicationName: 'IMD ERP',
+  keywords: ['ERP', 'POS', 'Warehouse', 'Inventory', 'Sales', 'مستودع', 'مبيعات', 'نقاط البيع'],
+  authors: [{ name: 'Eng. Ibrahim Mabrouk El-Deeb' }],
+  creator: 'Eng. Ibrahim Mabrouk El-Deeb',
+  publisher: 'IMD',
+  icons: {
     icon: [
       {
         url: '/imd-logo.jpeg',
@@ -26,11 +32,23 @@ icons: {
         type: 'image/jpeg',
       },
     ],
-    apple: '/imd-logo.jpeg',
+    apple: [
+      {
+        url: '/imd-logo.jpeg',
+        sizes: '180x180',
+        type: 'image/jpeg',
+      },
+    ],
+  },
+  openGraph: {
+    title: 'IMD ERP - نظام إدارة المستودع',
+    description: 'Professional Warehouse Management System',
+    type: 'website',
+    locale: 'ar_AR',
   },
 }
 
-export const viewport = {
+export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
@@ -47,6 +65,7 @@ export default function RootLayout({
     <html lang="ar" dir="rtl" className={`${_cairo.variable} ${_geist.variable} ${_geistMono.variable}`}>
       <body className="font-sans antialiased bg-slate-50 text-slate-900">
         <StoreProvider>
+          <OfflineIndicator />
           {children}
         </StoreProvider>
         <Analytics />

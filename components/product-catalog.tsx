@@ -34,13 +34,13 @@ export function ProductCatalog({
     category: 'دهانات',
     unit: 'قطعة',
     price_buy: 0,
-    price_sell: 0,
+    price: 0,
     stock: 0,
     min_quantity: 10,
   })
 
   const handleAddProduct = async () => {
-    if (!newProduct.name || newProduct.price_sell <= 0) {
+    if (!newProduct.name || newProduct.price <= 0) {
       alert('يرجى ملء اسم المنتج والسعر')
       return
     }
@@ -54,7 +54,7 @@ export function ProductCatalog({
           category: 'دهانات',
           unit: 'قطعة',
           price_buy: 0,
-          price_sell: 0,
+          price: 0,
           stock: 0,
           min_quantity: 10,
         })
@@ -141,8 +141,8 @@ export function ProductCatalog({
                   </label>
                   <input
                     type="number"
-                    value={newProduct.price_sell}
-                    onChange={(e) => setNewProduct({...newProduct, price_sell: parseFloat(e.target.value) || 0})}
+                    value={newProduct.price}
+                    onChange={(e) => setNewProduct({...newProduct, price: parseFloat(e.target.value) || 0})}
                     className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     min="0"
                     step="0.01"
@@ -225,7 +225,7 @@ interface ProductCardProps {
 
 function ProductCard({ product, onAddToCart }: ProductCardProps) {
   const displayProduct = toProductUI(product)
-  const isOutOfStock = displayProduct.stock <= 0
+  const isOutOfStock = displayProduct.quantity <= 0
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-200 shadow-sm">
@@ -242,7 +242,7 @@ function ProductCard({ product, onAddToCart }: ProductCardProps) {
       {/* Content */}
       <div className="p-2 md:p-3 space-y-1 md:space-y-2">
         <div className="space-y-1">
-          <h3 className="font-semibold text-slate-900 text-xs md:text-sm line-clamp-1">{displayProduct.name}</h3>
+          <h3 className="font-semibold text-slate-900 text-xs md:text-sm line-clamp-1">{displayProduct.name_ar}</h3>
           <p className="text-xs text-slate-500 hidden md:block">{displayProduct.category}</p>
         </div>
 
@@ -250,10 +250,10 @@ function ProductCard({ product, onAddToCart }: ProductCardProps) {
         <div className="space-y-1">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs md:text-sm font-bold text-slate-900">{(displayProduct.price_sell || 0).toFixed(2)} ج.م</p>
+              <p className="text-xs md:text-sm font-bold text-slate-900">{Number(displayProduct.price || 0).toFixed(2)} ج.م</p>
             </div>
             <span className="text-xs bg-slate-100 px-1.5 md:px-2 py-0.5 md:py-1 rounded text-slate-600">
-              {displayProduct.stock} {displayProduct.unit}
+              {displayProduct.quantity} {displayProduct.unit}
             </span>
           </div>
         </div>

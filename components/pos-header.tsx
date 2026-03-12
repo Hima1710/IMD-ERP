@@ -3,9 +3,10 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Search, Barcode, Bell, User, Clock, Settings, LogOut, AlertTriangle } from 'lucide-react'
+import { Search, Barcode, Bell, User, Clock, Settings, LogOut, AlertTriangle, Wifi, WifiOff } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Product } from '@/lib/types'
+import { useOfflineSync } from '@/hooks/use-offline-sync'
 
 interface POSHeaderProps {
   searchTerm: string
@@ -31,6 +32,9 @@ export function POSHeader({ searchTerm, onSearchChange, selectedStore }: POSHead
   const [showNotifications, setShowNotifications] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
+  
+  // Get offline sync status
+  const { isOnline: isConnected, pendingCount, isSyncing, syncNow } = useOfflineSync()
   
   // Refs for click outside
   const notifRef = useRef<HTMLDivElement>(null)
@@ -125,6 +129,26 @@ export function POSHeader({ searchTerm, onSearchChange, selectedStore }: POSHead
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-blue-600" />
             <span>{currentTime}</span>
+          </div>
+          
+          {/* Online/Offline Status Indicator */}
+          <div className="flex items-center gap-2">
+            {isConnected ? (
+              <>
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                <span className="text-green-600">متصل</span>
+                {pendingCount > 0 && (
+                  <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                    {pendingCount} معاملة معلقة
+                  </span>
+                )}
+              </>
+            ) : (
+              <>
+                <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                <span className="text-red-600">غير متصل</span>
+              </>
+            )}
           </div>
         </div>
 

@@ -64,23 +64,20 @@ export default function Invoice(props: InvoiceProps) {
       `}} />
 
       {/* الحاوية السوداء - تأكد أن z-index أعلى من أي شيء آخر */}
-      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 no-print" dir="rtl">
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[9999] p-2 no-print" dir="rtl">
         
-        {/* زر الإغلاق المصلح */}
+
+        {/* زر الإغلاق المصلح -放在了最外层确保可点击 */}
         <button 
-          onClick={(e) => {
-            e.preventDefault();
-            props.onClose?.();
-          }} 
-          className="absolute top-6 left-6 bg-red-600 text-white p-3 rounded-full shadow-2xl z-[10001] hover:bg-red-700 transition-all active:scale-90"
+          onClick={() => props.onClose?.()} 
+          className="absolute top-6 left-6 bg-red-600 text-white p-3 rounded-full shadow-2xl z-[10001] hover:bg-red-700 transition-all active:scale-90 cursor-pointer pointer-events-auto"
           title="إغلاق"
         >
           <X className="w-8 h-8" />
         </button>
 
         {/* جسم الفاتورة */}
-        <div className="invoice-printable-wrapper bg-white relative shadow-2xl overflow-auto max-h-[95vh] print:max-h-none print:shadow-none"
-          style={{ width: '210mm', minHeight: '297mm', padding: '15mm', fontFamily: 'Arial, sans-serif' }}>
+        <div className="invoice-printable-wrapper bg-white relative shadow-2xl max-w-[95vw] max-h-[95vh] overflow-auto p-4 rounded-2xl print:max-h-none print:shadow-none print:w-full print:p-8 print:max-w-none" style={{ fontFamily: 'Arial, sans-serif' }}>
           
           {/* العلامة المائية */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden">
