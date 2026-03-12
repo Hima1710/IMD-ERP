@@ -22,23 +22,18 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: '/imd-logo.jpeg',
+        url: '/icon.png',
         sizes: '192x192',
-        type: 'image/jpeg',
+        type: 'image/png',
       },
       {
-        url: '/imd-logo.jpeg',
+        url: '/icon.png',
         sizes: '512x512',
-        type: 'image/jpeg',
+        type: 'image/png',
       },
     ],
-    apple: [
-      {
-        url: '/imd-logo.jpeg',
-        sizes: '180x180',
-        type: 'image/jpeg',
-      },
-    ],
+    apple: '/icon.png',
+    shortcut: '/icon.png',
   },
   openGraph: {
     title: 'IMD ERP - نظام إدارة المستودع',
@@ -63,6 +58,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl" className={`${_cairo.variable} ${_geist.variable} ${_geistMono.variable}`}>
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+      </head>
       <body className="font-sans antialiased bg-slate-50 text-slate-900">
         <StoreProvider>
           <OfflineIndicator />
