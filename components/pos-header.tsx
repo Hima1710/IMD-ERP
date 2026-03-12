@@ -124,7 +124,7 @@ export function POSHeader({ searchTerm, onSearchChange, selectedStore }: POSHead
   return (
     <div className="bg-white border-b border-slate-200 shadow-sm">
       {/* Top Bar */}
-      <div className="px-3 md:px-6 py-2 md:py-3 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white border-b border-slate-100">
+      <div className="px-3 md:px-6 py-1 md:py-2 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white border-b border-slate-100">
         <div className="hidden md:flex items-center gap-6 text-sm text-slate-600">
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-blue-600" />
@@ -279,7 +279,7 @@ export function POSHeader({ searchTerm, onSearchChange, selectedStore }: POSHead
       </div>
 
       {/* Search Bar */}
-      <div className="px-3 md:px-6 py-3 md:py-4 flex items-center gap-2 md:gap-4">
+      <div className="px-3 md:px-6 py-2 md:py-3 flex items-center gap-2 md:gap-4">
         <div className="flex-1 flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 md:px-4 py-2 hover:border-slate-300 focus-within:border-blue-500 focus-within:bg-white transition-colors">
           <Search className="w-4 md:w-5 h-4 md:h-5 text-slate-400 flex-shrink-0" />
           <input

@@ -361,7 +361,7 @@ export default function POSPage() {
             <div className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 shadow-sm">
               <button
                 onClick={() => setMobileNavOpen(true)}
-                className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200"
+className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 md:hidden"
               >
                 <Menu className="w-5 h-5 text-slate-700" />
               </button>
@@ -392,7 +392,7 @@ export default function POSPage() {
             </div>
 
             {/* Main Content Area - Responsive: Stack on mobile, side by side on desktop */}
-            <div className="flex-1 flex flex-col md:flex-row overflow-hidden pb-20 md:pb-0">
+<div className="flex-1 flex flex-col md:flex-row overflow-hidden pb-24">
               {/* Product Catalog - Full width on mobile, left side on desktop */}
               <div className="flex-1 overflow-y-auto p-4 md:p-8 order-2 md:order-1">
                 <ProductCatalog
