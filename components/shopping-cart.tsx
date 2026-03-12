@@ -122,7 +122,7 @@ export function ShoppingCart({
               <CompactCartRow
                 key={item.id}
                 item={item}
-                onQuantityChange={(qty) => onUpdateQuantity(item.id, qty)}
+  onQuantityChange={(qty: number) => onUpdateQuantity(item.id, qty)}
                 onRemove={() => onUpdateQuantity(item.id, 0)}
               />
             ))}
@@ -219,36 +219,5 @@ function CompactCartRow({ item, onQuantityChange, onRemove }: any) {
   )
 }
 
-// Compact Invoice Component (imported)
-function CompactInvoice(props: any) {
-  // Thermal receipt style implementation
-  return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[9999] p-2">
-      <div className="max-w-[320px] w-full mx-4 bg-white rounded-lg shadow-2xl print:shadow-none">
-        {/* Compact receipt content */}
-        <div className="p-3 text-[10px] leading-tight">
-          {/* Header */}
-          <div className="border-b border-dashed pb-1 mb-2 text-xs font-bold">
-            متجر الدهانات
-          </div>
-          {/* Items */}
-          {props.items?.map((item: any, i: number) => (
-            <div key={i} className="flex justify-between py-0.5 border-b border-dashed text-[10px]">
-              <span>{item.name}</span>
-              <span>{item.quantity}x{item.price.toFixed(2)} = {(item.quantity * item.price).toFixed(2)}</span>
-            </div>
-          ))}
-          {/* Total */}
-          <div className="border-t pt-1 mt-2 font-bold text-xs">
-            الإجمالي: {props.total?.toFixed(2)} ج.م
-          </div>
-        </div>
-        <div className="p-2 border-t flex gap-2">
-          <button className="flex-1 bg-blue-600 text-white py-1 px-2 rounded text-xs">طباعة</button>
-          <button className="flex-1 bg-slate-600 text-white py-1 px-2 rounded text-xs" onClick={props.onClose}>إغلاق</button>
-        </div>
-      </div>
-    </div>
-  )
-}
+
 
