@@ -300,7 +300,7 @@ export default function POSPage() {
         <div className="flex-1 flex flex-col md:flex-row overflow-hidden pb-24">
           <div className="flex-1 overflow-y-auto p-4 md:p-8 order-2 md:order-1">
             <ProductCatalog
-              products={filteredProducts}
+              products={filteredProducts as any}
               selectedCategory={selectedCategory}
               onCategoryChange={setSelectedCategory}
               onAddToCart={handleAddToCart}
@@ -313,6 +313,7 @@ export default function POSPage() {
               </div>
             )}
           </div>
+
 
           <div className="hidden md:block w-80 border-r border-slate-200 bg-white overflow-y-auto order-2 shadow-sm">
             <ShoppingCart
