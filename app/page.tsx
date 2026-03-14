@@ -342,15 +342,16 @@ export default function POSPage() {
             <div className="flex-1 overflow-y-auto">
               <ShoppingCart
                 cartItems={cartItems}
-                allProducts={productsForDisplay}
+                allProducts={productsForDisplay as any}
                 onUpdateQuantity={handleUpdateQuantity}
                 taxRate={taxRate}
                 discountPercent={discountPercent}
-                onDiscountChange={setDiscountPercent}
+                onDiscountChange={setDiscountChange}
               />
             </div>
           </div>
         </div>
+
       )}
 
       <BottomNav cartCount={cartItems.length} />
