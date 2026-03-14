@@ -3,7 +3,6 @@ import { createServerClient } from '@supabase/ssr'
 import { supabaseUrl, supabaseAnonKey } from '@/lib/supabase'
 
 export async function middleware(request: NextRequest) {
-  // ✅ Modern @supabase/ssr with getAll/setAll()
   const supabase = createServerClient(
     supabaseUrl,
     supabaseAnonKey,
@@ -12,81 +11,36 @@ export async function middleware(request: NextRequest) {
         getAll() {
           return request.cookies.getAll()
         },
-        setAll(cookiesToSet: { name: string; value: string; options?: any }[]) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            request.cookies.set(name, value, options)
-          })
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value, options))
         },
       },
     }
   )
 
-  let response = NextResponse.next({
-    request,
-  })
+  let response = NextResponse.next({ request })
 
-  // Debug cookies (chunked sb-* cookies)
-  const authCookies = request.cookies.getAll().filter(c => c.name.startsWith('sb-'))
-  console.log(`🔐 [MIDDLEWARE] Auth cookies found: ${authCookies.length}`, authCookies.map(c => `${c.name}=${c.value.slice(0,20)}...`))
+  // Protected routes (exclude public)
+  const pathname = request.nextUrl.pathname
+  const isPublic = pathname === '/' || pathname.startsWith('/login') || pathname.match(/\\.(ico|png|jpg|jpeg|gif|svg|js|css|wasm|tff|woff|woff2)$/i)
+  
+  // Always refresh session cookies
+  await supabase.auth.getUser()
+  
+  const { data: { user } } = await supabase.auth.getUser()
 
-  try {
-    // 🔄 PROPERLY refresh session FIRST
-    const { data: { session }, error: refreshError } = await supabase.auth.refreshSession()
-    
-    if (refreshError) {
-      console.log('🔓 [MIDDLEWARE] Refresh failed:', refreshError.message)
-    } else if (session) {
-      console.log('🔄 [MIDDLEWARE] Session refreshed:', session.user.email)
-    }
-
-    // ✅ getUser() AFTER refresh
-    const { data: { user }, error: getUserError } = await supabase.auth.getUser()
-    
-    if (getUserError) {
-      console.error("🚫 [MIDDLEWARE] getUser failed:", getUserError.message)
-    } else if (user) {
-      console.log("✅ [MIDDLEWARE] User authenticated:", user.email)
-    } else {
-      console.log("🚫 [MIDDLEWARE] No user session after refresh")
-    }
-
-    const { pathname } = request.nextUrl
-    const isPublicRoute = pathname.startsWith('/login') || pathname === '/'
-
-    // Allow login → dashboard transition
-    const isLoginTransition = pathname === '/' && request.headers.get('referer')?.includes('/login')
-    if (isLoginTransition) {
-      console.log("⏳ [MIDDLEWARE] Login transition - allowing")
-      return response
-    }
-
-    // 🔒 Protect app routes
-    if (!user && !isPublicRoute) {
-      console.log(`🚫 [MIDDLEWARE] Unauthorized → /login (path: ${pathname})`)
-      const url = request.nextUrl.clone()
-      url.pathname = '/login'
-      url.searchParams.set(`return_to`, encodeURI(request.url))
-      return NextResponse.redirect(url)
-    }
-
-    // 🔄 Redirect authenticated users from login
-    if (user && pathname.startsWith('/login')) {
-      console.log("🔄 [MIDDLEWARE] Auth user → dashboard")
-      const url = request.nextUrl.clone()
-      url.pathname = '/'
-      return NextResponse.redirect(url)
-    }
-
-  } catch (err) {
-    console.error('[MIDDLEWARE] Error:', err)
+  // No user + protected route → login
+  if (!user && !isPublic) {
+    const redirectUrl = request.nextUrl.clone()
+    redirectUrl.pathname = '/login'
+    redirectUrl.searchParams.set('return_to', encodeURI(request.url))
+    return NextResponse.redirect(redirectUrl)
   }
 
-  // 🔄 Forward ALL cookies to client response (modern SSR)
-  supabase.auth.getSession().then(({ data: { session } }) => {
-    if (session) {
-      // Session refreshed - cookies already updated via setAll()
-    }
-  })
+  // Auth user on login → home
+  if (user && pathname === '/login') {
+    return NextResponse.redirect(new URL('/', request.url))
+  }
 
   return response
 }
