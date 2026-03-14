@@ -144,7 +144,8 @@ const EXPENSE_CATEGORIES = [
 ]
 
 export default function FinanceHubPage() {
-  const { store, storeLoading, isLoaded } = useStore()
+  const { store, loading, isLoaded } = useStore()
+  const storeLoading = loading
   
   // ============== STATE ==============
   const [activeTab, setActiveTab] = useState<'customers' | 'suppliers' | 'expenses'>('customers')
