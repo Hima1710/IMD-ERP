@@ -203,8 +203,8 @@ export default function POSPage() {
     return productsForDisplay.filter(product => {
       const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory
       const matchesSearch = 
-        (product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-         (product.name_ar?.toLowerCase().includes(searchTerm.toLowerCase())))
+        (product.name_ar?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+         searchTerm === '')
       return matchesCategory && matchesSearch
     })
   }, [selectedCategory, searchTerm, productsForDisplay])
