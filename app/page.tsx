@@ -318,13 +318,14 @@ export default function POSPage() {
           <div className="hidden md:block w-80 border-r border-slate-200 bg-white overflow-y-auto order-2 shadow-sm">
             <ShoppingCart
               cartItems={cartItems}
-              allProducts={productsForDisplay}
+              allProducts={productsForDisplay as any}
               onUpdateQuantity={handleUpdateQuantity}
               taxRate={taxRate}
               discountPercent={discountPercent}
               onDiscountChange={setDiscountPercent}
             />
           </div>
+
         </div>
       </div>
 
