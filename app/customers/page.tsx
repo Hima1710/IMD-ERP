@@ -252,36 +252,45 @@ export default function FinanceHubPage() {
   // ============== CUSTOMER FUNCTIONS ==============
 
   const fetchCustomers = useCallback(async () => {
+    // ✅ STORE-DRIVEN: No auth.getUser() needed
+    if (!store?.id || storeLoading || !isLoaded) {
+      console.log('⏳ [CUSTOMERS] Store not ready, skipping fetch')
+      return
+    }
+
     try {
       setLoading(true)
-      if (!supabase) return
 
-      const { data: userData } = await supabase.auth.getUser()
-      if (!userData?.user) return
+      if (!supabase) {
+        setError('Supabase not configured')
+        setLoading(false)
+        return
+      }
 
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('shop_id')
-        .eq('id', userData.user.id)
-        .single()
+      console.log('👥 [CUSTOMERS] Fetching for shop:', store.id)
 
-      if (!profileData?.shop_id) return
-      setShopId(profileData.shop_id)
-
-      const { data: customersData } = await supabase
+      const { data: customersData, error } = await supabase
         .from('customers')
         .select('*')
-        .eq('shop_id', profileData.shop_id)
+        .eq('shop_id', store.id)  // ✅ Direct store.id
         .order('name', { ascending: true })
+
+      if (error) {
+        console.error('Error fetching customers:', error)
+        setError('خطأ في جلب العملاء')
+        return
+      }
 
       setCustomers(customersData || [])
       setFilteredCustomers(customersData || [])
+      setShopId(store.id)
     } catch (err) {
       console.error('Error fetching customers:', err)
+      setError('حدث خطأ غير متوقع')
     } finally {
       setLoading(false)
     }
-  }, [supabase])
+  }, [store?.id, storeLoading, isLoaded, supabase])
 
   const fetchCreditCustomers = useCallback(async () => {
     if (!supabase || !shopId) return

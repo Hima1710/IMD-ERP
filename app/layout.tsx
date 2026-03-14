@@ -1,19 +1,26 @@
 import type { Metadata, Viewport } from 'next'
-import { Geist, Geist_Mono, Cairo } from 'next/font/google'
-import { Analytics } from '@vercel/analytics/next'
-import { StoreProvider } from '@/hooks/use-store'
+import { Inter, Cairo } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/react'
 import { OfflineIndicator } from '@/components/OfflineIndicator'
+import { AuthInitializer } from '@/components/AuthInitializer'
+
 import './globals.css'
 
-const _geist = Geist({ subsets: ["latin"], variable: '--font-geist' });
-const _geistMono = Geist_Mono({ subsets: ["latin"], variable: '--font-geist-mono' });
-const _cairo = Cairo({ subsets: ["latin", "arabic"], variable: '--font-cairo' });
+// TEMP ENV VERIFICATION - Remove after confirming vars load
+if (typeof window !== 'undefined') {
+  console.log('🌐 CLIENT ENV:', {
+    SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'LOADED' : 'MISSING',
+    SUPABASE_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'LOADED' : 'MISSING'
+  })
+}
+
+const inter = Inter({ subsets: ["latin"], variable: '--font-inter' });
+const cairo = Cairo({ subsets: ["arabic", "latin"], variable: '--font-cairo', weight: ['300', '400', '500', '600', '700'] });
 
 export const metadata: Metadata = {
   title: 'IMD ERP - نظام إدارة المستودع',
   description: 'Professional Warehouse Management System - نظام إدارة المستودع والمبيعات - By Eng. Ibrahim Mabrouk El-Deeb',
-  generator: 'v0.app',
-
+  generator: 'Next.js',
   applicationName: 'IMD ERP',
   keywords: ['ERP', 'POS', 'Warehouse', 'Inventory', 'Sales', 'مستودع', 'مبيعات', 'نقاط البيع'],
   authors: [{ name: 'Eng. Ibrahim Mabrouk El-Deeb' }],
@@ -56,18 +63,24 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  // TEMP SERVER ENV VERIFICATION - Remove after testing
+  console.log('🖥️ SERVER ENV:', {
+    SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'LOADED' : 'MISSING',
+    SUPABASE_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'LOADED' : 'MISSING'
+  })
+
   return (
-    <html lang="ar" dir="rtl" className={`${_cairo.variable} ${_geist.variable} ${_geistMono.variable}`}>
+    <html lang="ar" dir="rtl" className={`${cairo.variable} ${inter.variable}`}>
       <head>
-        <link rel="manifest" href="/manifest.json" />
+        {/* <link rel="manifest" href="/manifest.json" /> */}
       </head>
-      <body className="font-sans antialiased bg-slate-50 text-slate-900">
-        <StoreProvider>
-          <OfflineIndicator />
+      <body className="font-sans antialiased bg-slate-50 text-slate-900 min-h-screen">
+        <AuthInitializer />
+        <OfflineIndicator />
           {children}
-        </StoreProvider>
         <Analytics />
       </body>
     </html>
   )
 }
+

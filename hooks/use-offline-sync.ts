@@ -37,13 +37,29 @@ export function useOfflineSync(): UseOfflineSyncReturn {
     setOnline(isOnline())
   }, [])
 
-  // Update pending count
+  // Update pending count - delayed after load
   const updatePendingCount = useCallback(async () => {
-    try {
-      const count = await getPendingSyncCount()
-      setPendingCount(count)
-    } catch (err) {
-      console.error('Error getting pending count:', err)
+    if (typeof window === 'undefined') return;
+    
+    // Use requestIdleCallback if available, else setTimeout
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(async () => {
+        try {
+          const count = await getPendingSyncCount()
+          setPendingCount(count)
+        } catch (err) {
+          console.error('Error getting pending count:', err)
+        }
+      })
+    } else {
+      setTimeout(async () => {
+        try {
+          const count = await getPendingSyncCount()
+          setPendingCount(count)
+        } catch (err) {
+          console.error('Error getting pending count:', err)
+        }
+      }, 1000)
     }
   }, [])
 
@@ -143,16 +159,27 @@ export function useOfflineSync(): UseOfflineSyncReturn {
   useEffect(() => {
     const unsubscribeOnline = onOnline(() => {
       setOnline(true)
-      // Auto-sync when coming back online
-      syncAllTransactions()
+      // Auto-sync when coming back online - delayed
+      if (typeof window === 'undefined') return;
+      if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(() => syncAllTransactions())
+      } else {
+        setTimeout(syncAllTransactions, 500)
+      }
     })
 
     const unsubscribeOffline = onOffline(() => {
       setOnline(false)
     })
 
-    // Initial pending count check
-    updatePendingCount()
+    // Initial pending count check - delayed
+    if (typeof window !== 'undefined') {
+      if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(updatePendingCount)
+      } else {
+        setTimeout(updatePendingCount, 1000)
+      }
+    }
 
     return () => {
       unsubscribeOnline()

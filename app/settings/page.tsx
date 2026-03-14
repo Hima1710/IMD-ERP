@@ -7,6 +7,7 @@ import { BottomNav } from '@/components/BottomNav'
 import { MobileNav, FloatingMenuButton } from '@/components/MobileNav'
 import { supabase } from '@/lib/supabase'
 import { useStore } from '@/hooks/use-store'
+import React from 'react'
 import { Store, Camera, Save, Loader2, AlertCircle, CheckCircle, Menu } from 'lucide-react'
 
 interface StoreSettings {
@@ -18,7 +19,7 @@ interface StoreSettings {
 }
 
 export default function SettingsPage() {
-  const { store: globalStore, loading: globalLoading, refreshStore } = useStore()
+  const { store: globalStore, loading: storeLoading, isLoaded, refreshStore } = useStore()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
@@ -33,7 +34,7 @@ export default function SettingsPage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   useEffect(() => {
-    if (!globalLoading) {
+    if (isLoaded && !storeLoading) {
       setStore({
         name: globalStore.name,
         phone: globalStore.phone,
@@ -42,47 +43,11 @@ export default function SettingsPage() {
       })
       setLoading(false)
     }
-  }, [globalLoading, globalStore])
+  }, [isLoaded, storeLoading, globalStore])
 
-  useEffect(() => {
-    fetchUserAndShopData()
-  }, [])
+// Removed fetchUserAndShopData() - using store exclusively
 
-  const fetchUserAndShopData = async () => {
-    if (!supabase) return
-    
-    const userResponse = await supabase.auth.getUser()
-    const userData = userResponse?.data
-    
-    if (userData?.user) {
-      setUserId(userData.user.id)
-      
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('shop_id')
-        .eq('id', userData.user.id)
-        .single()
-      
-      if (profile?.shop_id) {
-        setShopId(profile.shop_id)
-        
-        const { data: shop } = await supabase
-          .from('shops')
-          .select('*')
-          .eq('id', profile.shop_id)
-          .single()
-        
-        if (shop) {
-          setStore({
-            name: shop.name || '',
-            phone: shop.phone || '',
-            address: shop.location || '',
-            logo_url: shop.logo_url || '',
-          })
-        }
-      }
-    }
-  }
+// ✅ fetchUserAndShopData() REMOVED - store provides all data
 
   const handleSave = async () => {
     if (!supabase) {
@@ -90,15 +55,7 @@ export default function SettingsPage() {
       return
     }
 
-    if (!userId) {
-      setMessage({ type: 'error', text: 'يجب تسجيل الدخول أولاً' })
-      return
-    }
-
-    if (!shopId) {
-      setMessage({ type: 'error', text: 'لا يوجد متجر مرتبط بهذا المستخدم' })
-      return
-    }
+// ✅ Store provides userId + shopId
 
     if (!store.name.trim()) {
       setMessage({ type: 'error', text: 'يرجى إدخال اسم المتجر' })

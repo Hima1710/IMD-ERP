@@ -1,4 +1,5 @@
 import type { Config } from 'tailwindcss'
+import tailwindcssAnimate from 'tailwindcss-animate'
 
 const config: Config = {
   content: [
@@ -8,8 +9,8 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['var(--font-cairo)', 'var(--font-geist)'],
-        mono: ['var(--font-geist-mono)'],
+        sans: ['var(--font-cairo)', 'var(--font-inter)'],
+        mono: ['var(--font-inter)'],
       },
       colors: {
         background: 'var(--background)',
@@ -35,7 +36,8 @@ const config: Config = {
       },
     },
   },
-  plugins: [],
+  plugins: [tailwindcssAnimate],
 }
 
 export default config
+

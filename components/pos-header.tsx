@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Search, Barcode, Bell, User, Clock, Settings, LogOut, AlertTriangle, Wifi, WifiOff } from 'lucide-react'
+import { useStore } from '@/hooks/use-store'
+import { Search, Barcode, Bell, User, Clock, Settings, LogOut, AlertTriangle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Product } from '@/lib/types'
 import { useOfflineSync } from '@/hooks/use-offline-sync'
@@ -23,6 +24,7 @@ interface LowStockProduct {
 
 export function POSHeader({ searchTerm, onSearchChange, selectedStore }: POSHeaderProps) {
   const router = useRouter()
+  const { store, user, isLoaded } = useStore()  // ✅ USE STORE - NO local auth
   
   // State for notifications
   const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([])
@@ -40,12 +42,14 @@ export function POSHeader({ searchTerm, onSearchChange, selectedStore }: POSHead
   const notifRef = useRef<HTMLDivElement>(null)
   const userRef = useRef<HTMLDivElement>(null)
 
-  // Fetch low stock products on mount
+  // FIXED: Fetch low stock only when store loaded + has shop
   useEffect(() => {
-    fetchLowStockProducts()
-  }, [])
+    if (isLoaded && user && store.id) {
+      fetchLowStockProducts()
+    }
+  }, [isLoaded, user, store.id])
 
-  // Handle click outside to close dropdowns
+  // Handle click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
@@ -60,16 +64,11 @@ export function POSHeader({ searchTerm, onSearchChange, selectedStore }: POSHead
   }, [])
 
   const fetchLowStockProducts = async () => {
-    if (!supabase) return
+    if (!supabase || !user || !store.id) return  // ✅ Use store data
     
     try {
       setLoadingNotifications(true)
       
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
-      // Get shop_id
       const { data: profile } = await supabase
         .from('profiles')
         .select('shop_id')
@@ -78,7 +77,6 @@ export function POSHeader({ searchTerm, onSearchChange, selectedStore }: POSHead
 
       if (!profile?.shop_id) return
 
-      // Fetch all products for this shop
       const { data: products } = await supabase
         .from('products')
         .select('id, name, stock, min_quantity')
@@ -86,8 +84,7 @@ export function POSHeader({ searchTerm, onSearchChange, selectedStore }: POSHead
 
       if (!products) return
 
-      // Filter low stock products (stock <= min_quantity)
-      const lowStock = products.filter(p => 
+      const lowStock = products.filter((p: any) => 
         (p.stock || 0) <= (p.min_quantity || 0)
       )
 
@@ -111,6 +108,7 @@ export function POSHeader({ searchTerm, onSearchChange, selectedStore }: POSHead
       router.push('/login')
     } catch (error) {
       console.error('Error signing out:', error)
+      router.push('/login')
     } finally {
       setLoggingOut(false)
     }
@@ -131,7 +129,7 @@ export function POSHeader({ searchTerm, onSearchChange, selectedStore }: POSHead
             <span>{currentTime}</span>
           </div>
           
-          {/* Online/Offline Status Indicator */}
+          {/* Online/Offline Status */}
           <div className="flex items-center gap-2">
             {isConnected ? (
               <>
@@ -139,7 +137,7 @@ export function POSHeader({ searchTerm, onSearchChange, selectedStore }: POSHead
                 <span className="text-green-600">متصل</span>
                 {pendingCount > 0 && (
                   <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
-                    {pendingCount} معاملة معلقة
+                    {pendingCount} معلقة
                   </span>
                 )}
               </>
@@ -153,7 +151,7 @@ export function POSHeader({ searchTerm, onSearchChange, selectedStore }: POSHead
         </div>
 
         <div className="flex items-center gap-1 md:gap-2">
-          {/* Notifications Bell */}
+          {/* Notifications */}
           <div className="relative" ref={notifRef}>
             <button 
               onClick={() => {
@@ -170,7 +168,6 @@ export function POSHeader({ searchTerm, onSearchChange, selectedStore }: POSHead
               )}
             </button>
 
-            {/* Notifications Dropdown */}
             {showNotifications && (
               <div className="absolute left-0 mt-2 w-72 md:w-80 bg-white border border-slate-200 rounded-lg shadow-lg z-50 overflow-hidden">
                 <div className="p-3 border-b border-slate-200 bg-slate-50">
@@ -186,14 +183,11 @@ export function POSHeader({ searchTerm, onSearchChange, selectedStore }: POSHead
                   ) : lowStockProducts.length === 0 ? (
                     <div className="p-4 text-center">
                       <Bell className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                      <p className="text-slate-600">لا توجد تنبيهات جديدة</p>
+                      <p className="text-slate-600">لا توجد تنبيهات</p>
                     </div>
                   ) : (
                     lowStockProducts.map(product => (
-                      <div 
-                        key={product.id}
-                        className="p-3 border-b border-slate-100 hover:bg-slate-50 flex items-start gap-3"
-                      >
+                      <div key={product.id} className="p-3 border-b border-slate-100 hover:bg-slate-50 flex items-start gap-3">
                         <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-slate-900 text-sm truncate">{product.name}</p>
@@ -237,11 +231,10 @@ export function POSHeader({ searchTerm, onSearchChange, selectedStore }: POSHead
               </div>
             </button>
 
-            {/* User Menu Dropdown */}
             {showUserMenu && (
               <div className="absolute left-0 mt-2 w-44 md:w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-50 overflow-hidden">
                 <div className="p-3 border-b border-slate-200">
-                  <p className="font-medium text-slate-900">القائمة</p>
+                  <p className="font-medium text-slate-900">{store.name || 'المستخدم'}</p>
                 </div>
                 
                 <div className="py-1">
@@ -251,7 +244,7 @@ export function POSHeader({ searchTerm, onSearchChange, selectedStore }: POSHead
                     className="flex items-center gap-3 px-3 md:px-4 py-2 text-slate-700 hover:bg-slate-50 transition-colors text-sm"
                   >
                     <Settings className="w-4 h-4" />
-                    <span>إعدادات المتجر</span>
+                    <span>إعدادات</span>
                   </Link>
                   
                   <button
@@ -293,7 +286,7 @@ export function POSHeader({ searchTerm, onSearchChange, selectedStore }: POSHead
 
         <button className="flex items-center gap-1 md:gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 md:px-4 py-2 rounded-lg transition-colors font-medium text-sm">
           <Barcode className="w-4 md:w-5 h-4 md:h-5" />
-          <span className="hidden sm:inline">ماسح باركود</span>
+          <span className="hidden sm:inline">باركود</span>
         </button>
       </div>
     </div>

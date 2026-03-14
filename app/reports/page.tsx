@@ -7,6 +7,7 @@ import { BottomNav } from '@/components/BottomNav'
 import { MobileNav, FloatingMenuButton } from '@/components/MobileNav'
 import { supabase } from '@/lib/supabase'
 import { Product } from '@/lib/types'
+import { useStore } from '@/hooks/use-store'
 import Invoice from '@/components/Invoice'
 import { 
   DollarSign, 
@@ -50,6 +51,8 @@ interface TopProduct {
 }
 
 export default function ReportsPage() {
+  const { store, isLoaded, storeLoading } = useStore()
+  
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [sales, setSales] = useState<Sale[]>([])
@@ -76,8 +79,14 @@ export default function ReportsPage() {
     }
   }
 
-  // Fetch all data
+// ✅ STORE-DRIVEN: No auth.getUser() needed
   const fetchData = useCallback(async () => {
+    // Guard: Wait for store to be ready
+    if (!store.id) {
+      console.log('⏳ [REPORTS] Store not ready, skipping')
+      return
+    }
+
     try {
       setLoading(true)
       setError(null)
@@ -88,34 +97,15 @@ export default function ReportsPage() {
         return
       }
 
-      // Get current user
-      const { data: userData, error: userError } = await supabase.auth.getUser()
-      if (userError || !userData?.user) {
-        setError('لم يتم العثور على المستخدم')
-        setLoading(false)
-        return
-      }
-
-      // Get shop_id from profiles
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('shop_id')
-        .eq('id', userData.user.id)
-        .single()
-
-      if (profileError || !profileData?.shop_id) {
-        setError('لم يتم العثور على متجر للمستخدم')
-        setLoading(false)
-        return
-      }
-
       const { todayStart, monthStart } = getDateRanges()
+
+      console.log('📊 [REPORTS] Fetching for shop:', store.id)
 
       // Fetch transactions for this shop
       const { data: salesData, error: salesError } = await supabase
         .from('transactions')
         .select('*')
-        .eq('shop_id', profileData.shop_id)
+        .eq('shop_id', store.id)  // ✅ Direct store.id
         .order('created_at', { ascending: false })
 
       if (salesError) {
@@ -126,7 +116,7 @@ export default function ReportsPage() {
       const { data: productsData, error: productsError } = await supabase
         .from('products')
         .select('*')
-        .eq('shop_id', profileData.shop_id)
+        .eq('shop_id', store.id)  // ✅ Direct store.id
 
       if (productsError) {
         console.error('Error fetching products:', productsError)
@@ -189,11 +179,13 @@ export default function ReportsPage() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [store.id])
 
   useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    if (isLoaded && !storeLoading && store.id) {
+      fetchData()
+    }
+  }, [fetchData, isLoaded, storeLoading, store.id])
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return '-'

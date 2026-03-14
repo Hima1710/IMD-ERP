@@ -45,11 +45,18 @@ export default function ProductsPage() {
   })
   const [savingProduct, setSavingProduct] = useState(false)
 
-  // Use centralized auth
-  const { checkUser } = useStore()
+// ✅ Centralized auth via store
+  const { store, user, isLoaded, loading: storeLoading, isAuthLoading } = useStore()
+
 
 
   const fetchProducts = useCallback(async () => {
+    // ✅ STORE-DRIVEN: No auth.getUser() needed
+    if (!store.id || storeLoading || !isLoaded) {
+      console.log('⏳ [PRODUCTS] Store not ready, skipping fetch')
+      return
+    }
+
     try {
       setLoading(true)
       setError(null)
@@ -60,32 +67,12 @@ export default function ProductsPage() {
         return
       }
 
-      const { data: userData, error: userError } = await supabase.auth.getUser()
-      
-      if (userError || !userData?.user) {
-        setError('لم يتم العثور على المستخدم')
-        setLoading(false)
-        return
-      }
-
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('shop_id')
-        .eq('id', userData.user.id)
-        .single()
-
-      if (profileError || !profileData?.shop_id) {
-        setError('لم يتم العثور على متجر للمستخدم')
-        setLoading(false)
-        return
-      }
-
-      setShopId(profileData.shop_id)
+      console.log('📥 [PRODUCTS] Fetching for shop:', store.id)
 
       const { data: productsData, error: productsError } = await supabase
         .from('products')
         .select('*')
-        .eq('shop_id', profileData.shop_id)
+        .eq('shop_id', store.id)  // ✅ Direct store.id
         .order('name', { ascending: true })
 
       if (productsError) {
@@ -96,17 +83,20 @@ export default function ProductsPage() {
 
       setProducts(productsData || [])
       setFilteredProducts(productsData || [])
+      setShopId(store.id)
     } catch (err) {
       console.error('Error fetching products:', err)
       setError('حدث خطأ غير متوقع')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [store.id, storeLoading, isLoaded])
 
   useEffect(() => {
-    fetchProducts()
-  }, [fetchProducts])
+    if (isLoaded && !storeLoading) {
+      fetchProducts()
+    }
+  }, [fetchProducts, isLoaded, storeLoading])
 
   useEffect(() => {
     if (!searchTerm.trim()) {

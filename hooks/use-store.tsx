@@ -1,6 +1,5 @@
-'use client'
-
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import { supabase } from '@/lib/supabase'
 
 interface StoreData {
@@ -9,14 +8,7 @@ interface StoreData {
   phone: string
   address: string
   logo_url: string
-}
-
-interface StoreContextType {
-  store: StoreData
-  user: any
-  loading: boolean
-  refreshStore: () => Promise<void>
-  checkUser: () => Promise<any>
+  shopId?: string | null
 }
 
 const defaultStore: StoreData = {
@@ -24,152 +16,141 @@ const defaultStore: StoreData = {
   phone: '',
   address: '',
   logo_url: '',
+  shopId: null,
 }
 
-const StoreContext = createContext<StoreContextType>({
-  store: defaultStore,
-  user: null,
-  loading: true,
-  refreshStore: async () => {},
-  checkUser: async () => null,
-})
-
-export function useStore() {
-  return useContext(StoreContext)
+interface StoreState {
+  store: StoreData
+  user: any | null
+  isAuthenticated: boolean
+  loading: boolean
+  isLoaded: boolean
+  isAuthLoading: boolean
+  hasInitializedAuth: boolean
+  initAuth: () => Promise<void>
+  fetchStore: () => Promise<void>
+  refreshStore: () => Promise<void>
+  signOut: () => Promise<void>
 }
 
-interface StoreProviderProps {
-  children: ReactNode
-}
-
-export function StoreProvider({ children }: StoreProviderProps) {
-  const [store, setStore] = useState<StoreData>(defaultStore)
-  const [user, setUser] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-
-  // Centralized user check - ONLY place that calls supabase.auth.getUser()
-  const checkUser = async () => {
-    try {
-      if (!supabase) {
-        return null
-      }
+export const useStore = create<StoreState>()(
+  persist(
+    (set, get) => ({
+      store: defaultStore,
+      user: null,
+      isAuthenticated: false,
+      loading: true,
+      isLoaded: false,
+      isAuthLoading: true,
+      hasInitializedAuth: false,
       
-      const { data: { user: currentUser }, error } = await supabase.auth.getUser()
-      
-      if (error) {
-        console.error('checkUser error:', error)
-        return null
-      }
-      
-      setUser(currentUser)
-      return currentUser
-    } catch (err) {
-      console.error('checkUser exception:', err)
-      return null
-    }
-  }
+      fetchStore: async () => {
+        const s = set
+        try {
+          const { data: { user: currentUser } } = await supabase.auth.getUser()
+          
+          if (!currentUser || !currentUser.id) {
+            s({ loading: false, isLoaded: true })
+            return
+          }
 
-  const fetchStore = async () => {
-    try {
-      if (!supabase) {
-        setLoading(false)
-        return
-      }
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('shop_id, full_name')
+            .eq('id', currentUser.id)
+            .single()
 
-      // Try to get user with retries
-      let currentUser = null
-      let retries = 0
-      const maxRetries = 5
+          if (!profile?.shop_id) {
+            s({ loading: false, isLoaded: true })
+            return
+          }
 
-      while (!currentUser && retries < maxRetries) {
+          const { data: shopData } = await supabase
+            .from('shops')
+            .select('*')
+            .eq('id', profile.shop_id)
+            .single()
+
+          s({
+            store: {
+              id: shopData?.id || '',
+              shopId: shopData?.id || null,
+              name: shopData?.name || '',
+              phone: shopData?.phone || '',
+              address: shopData?.location || '',
+              logo_url: shopData?.logo_url || '',
+            },
+            loading: false,
+            isLoaded: true
+          })
+        } catch (error) {
+          console.error('[STORE]', error)
+          s({ loading: false, isLoaded: true })
+        }
+      },
+
+      initAuth: async () => {
+        const s = set
+        const g = get
+        const state = g()
+        
+        if (state.hasInitializedAuth) {
+          return;
+        }
+        
+        s({ hasInitializedAuth: true, isAuthLoading: true })
+        console.log("🚀 [AUTH] One-time initialization started...");
+
         const { data: { session } } = await supabase.auth.getSession()
+        
         if (session?.user) {
-          currentUser = session.user
-          setUser(currentUser)
-          break
-        }
-        retries++
-        if (retries < maxRetries) {
-          await new Promise(resolve => setTimeout(resolve, 200))
-        }
-      }
-
-      if (!currentUser) {
-        console.log('useStore: No user session found')
-        setLoading(false)
-        return
-      }
-
-      console.log('📥 [STORE] Fetching profile for user:', currentUser.id)
-
-      // Fetch from profiles table to get shop_id
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('shop_id, full_name')
-        .eq('id', currentUser.id)
-        .single()
-
-      if (profileError) {
-        console.warn('⚠️ [STORE] Profile not found:', profileError.message)
-        setLoading(false)
-        return
-      }
-
-      if (profileData?.shop_id) {
-        // Fetch shop details from shops table
-        const { data: shopData, error: shopError } = await supabase
-          .from('shops')
-          .select('*')
-          .eq('id', profileData.shop_id)
-          .single()
-
-        if (shopError) {
-          console.warn('⚠️ [STORE] Shop not found:', shopError.message)
-          // Still set the profile name as fallback
-          setStore({
-            name: profileData.full_name || '',
-            phone: '',
-            address: '',
-            logo_url: '',
+          s({ 
+            user: session.user, 
+            isAuthenticated: true, 
+            isAuthLoading: false 
           })
-        } else if (shopData) {
-          console.log('✅ [STORE] Shop fetched:', shopData)
-          setStore({
-            id: shopData.id,
-            name: shopData.name || '',
-            phone: shopData.phone || '',
-            address: shopData.location || '',
-            logo_url: shopData.logo_url || '',
+          g().fetchStore()
+        } else {
+          s({ 
+            user: null, 
+            isAuthenticated: false, 
+            isAuthLoading: false 
           })
         }
-      } else {
-        // No shop_id, use profile full_name as fallback
-        setStore({
-          name: profileData.full_name || '',
-          phone: '',
-          address: '',
-          logo_url: '',
+
+        supabase.auth.onAuthStateChange((event, newSession) => {
+          console.log(`🔐 [AUTH EVENT] ${event}`);
+          
+          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            const currentUser = g().user;
+            if (newSession?.user?.id !== currentUser?.id) {
+              s({ 
+                user: newSession?.user, 
+                isAuthenticated: true, 
+                isAuthLoading: false 
+              })
+              g().fetchStore()
+            }
+          } else if (event === 'SIGNED_OUT') {
+            s({ 
+              user: null, 
+              isAuthenticated: false, 
+              isAuthLoading: false,
+              store: defaultStore
+            })
+          }
         })
+      },
+
+      refreshStore: () => get().fetchStore(),
+      
+      signOut: async () => {
+        await supabase.auth.signOut()
       }
-    } catch (error) {
-      console.error('❌ [STORE] Error fetching store:', error)
-    } finally {
-      setLoading(false)
+    }),
+    {
+      name: 'pos-store'
     }
-  }
-
-  useEffect(() => {
-    fetchStore()
-  }, [])
-
-  const refreshStore = async () => {
-    setLoading(true)
-    await fetchStore()
-  }
-
-  return (
-    <StoreContext.Provider value={{ store, user, loading, refreshStore, checkUser }}>
-      {children}
-    </StoreContext.Provider>
   )
-}
+)
+

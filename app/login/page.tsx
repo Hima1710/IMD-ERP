@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { createBrowserClient } from "@supabase/ssr";
 import { Lock, Mail, Loader2 } from "lucide-react";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,81 +14,96 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [sessionChecked, setSessionChecked] = useState(false);
+
+  const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
+
+  // Auth state listener for bulletproof sync
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        console.log("✅ [LOGIN] Auth listener: SIGNED_IN confirmed");
+        setSessionChecked(true);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    e.stopPropagation();
-    
-    console.log("🚀 [LOGIN] Login Started...");
-    console.log("📧 [LOGIN] Email:", email);
     
     setError("");
     setLoading(true);
+    setSessionChecked(false);
 
     try {
       if (!email || !password) {
-        console.log("❌ [LOGIN] Missing fields");
         setError("يرجى ملء جميع الحقول");
         setLoading(false);
         return;
       }
 
-      console.log("⏳ [LOGIN] Attempting client-side login...");
-      
-      // Use client-side login with email and password
-      if (!supabase) {
-        setError("خطأ في الاتصال بالخادم. يرجى تحديث الصفحة.");
-        setLoading(false);
-        return;
-      }
-
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
         password,
       });
 
-      if (error) {
-        console.log("❌ [LOGIN] Login failed:", error.message);
-        setError(getErrorMessage(error.message));
+      if (authError) {
+        console.error("❌ [LOGIN] Auth error:", authError.message);
+        setError(getErrorMessage(authError.message));
         setLoading(false);
         return;
       }
 
-      console.log("✅ [LOGIN] Login Success!");
-      console.log("🔄 [LOGIN] User:", data.user?.email);
-      console.log("🔄 [LOGIN] Redirecting to /...");
+      if (!data.session) {
+        setError("فشل في إنشاء الجلسة. يرجى المحاولة مرة أخرى.");
+        setLoading(false);
+        return;
+      }
+
+      console.log("✅ [LOGIN] Success! Syncing cookies...");
       
-      // Redirect to home - session is set in browser
-      router.push("/");
+      // CRITICAL: Refresh FIRST to sync SSR cookies for middleware
+      router.refresh();
       
-    } catch (err: any) {
-      console.error("💥 [LOGIN] CRASHED:", err);
-      setError(err.message || "حدث خطأ غير متوقع. يرجى المحاولة لاحقاً.");
+      // Wait for cookie propagation + auth listener
+      await new Promise(resolve => setTimeout(resolve, 150));
+      
+      console.log("🔄 [LOGIN] Redirecting to dashboard...");
+      router.push('/');
+      
+    } catch (err) {
+      console.error("💥 [LOGIN] Unexpected error:", err);
+      setError("حدث خطأ غير متوقع");
       setLoading(false);
     }
   };
 
-  // Helper to get Arabic error messages
   const getErrorMessage = (message: string): string => {
-    const lowerMessage = message.toLowerCase();
-    if (lowerMessage.includes("invalid login") || lowerMessage.includes("invalid credentials")) {
+    const lower = message.toLowerCase();
+    if (lower.includes("invalid login") || lower.includes("invalid credentials")) {
       return "بيانات الدخول غير صحيحة";
     }
-    if (lowerMessage.includes("user not found")) {
+    if (lower.includes("user not found")) {
       return "المستخدم غير موجود";
     }
-    if (lowerMessage.includes("email not confirmed")) {
-      return "يرجى التحقق من بريدك الإلكتروني لتأكيد الحساب";
+    if (lower.includes("email not confirmed")) {
+      return "يرجى تأكيد بريدك الإلكتروني";
     }
-    if (lowerMessage.includes("too many requests")) {
-      return "تجاوزت عدد المحاولات. يرجى المحاولة لاحقاً";
+    if (lower.includes("too many requests")) {
+      return "العديد من المحاولات. جرب لاحقاً";
     }
     return "بيانات الدخول غير صحيحة";
   };
 
   return (
     <div className="min-h-screen flex" dir="rtl">
-      {/* Left Side - Image */}
+      {/* Background Image */}
       <div 
         className="hidden lg:block lg:w-1/2 h-screen bg-cover bg-center bg-no-repeat"
         style={{
@@ -100,81 +118,76 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Right Side - Form */}
+      {/* Form */}
       <div className="w-full lg:w-1/2 h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900 p-6">
         <div className="w-full max-w-md">
-          {/* Header */}
           <div className="text-center mb-8">
             <div className="lg:hidden mb-6">
               <h1 className="text-3xl font-bold text-white mb-1">IMD ERP</h1>
               <p className="text-blue-300 text-sm">نظام إدارة مستودعات الدهانات</p>
             </div>
             <h1 className="text-4xl font-bold text-white mb-2 tracking-wide hidden lg:block">IMD ERP</h1>
-            <p className="text-blue-300 text-sm font-light italic hidden lg:block">By Eng. Ibrahim Mabrouk El-Deeb</p>
+            <p className="text-blue-300 text-sm font-light italic hidden lg:block">
+              By Eng. Ibrahim Mabrouk El-Deeb
+            </p>
           </div>
 
-          {/* Login Title */}
           <div className="text-center mb-6">
             <h2 className="text-2xl font-bold text-white">تسجيل الدخول</h2>
             <p className="text-slate-400 text-sm mt-1">أدخل بيانات دخولك للمتابعة</p>
           </div>
 
-          {/* Error Message */}
           {error && (
             <div className="mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-300 text-sm text-center">
               {error}
             </div>
           )}
 
-          {/* Form */}
           <form onSubmit={handleLogin} className="space-y-5">
-            {/* Email Input */}
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
                 البريد الإلكتروني
               </label>
               <div className="relative flex items-center border border-slate-600 rounded-xl focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent bg-slate-800/50">
+                <Mail className="absolute left-4 text-slate-400 h-5 w-5" />
                 <input
                   type="email"
                   placeholder="admin@imderp.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full outline-none px-4 py-3 bg-transparent text-white placeholder-slate-500"
+                  className="w-full outline-none px-12 py-3 bg-transparent text-white placeholder-slate-500"
                   disabled={loading}
                   required
                 />
-                <Mail className="absolute left-4 text-slate-400" size={20} />
               </div>
             </div>
 
-            {/* Password Input */}
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
                 كلمة المرور
               </label>
               <div className="relative flex items-center border border-slate-600 rounded-xl focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent bg-slate-800/50">
+                <Lock className="absolute left-4 text-slate-400 h-5 w-5" />
                 <input
                   type="password"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full outline-none px-4 py-3 bg-transparent text-white placeholder-slate-500"
+                  className="w-full outline-none px-12 py-3 bg-transparent text-white placeholder-slate-500"
                   disabled={loading}
                   required
                 />
-                <Lock className="absolute left-4 text-slate-400" size={20} />
               </div>
             </div>
 
-            {/* Login Button */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 disabled:from-slate-600 disabled:to-slate-500 text-white font-semibold py-3.5 rounded-xl transition duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-600/25"
+              className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 disabled:from-slate-600 disabled:to-slate-500 text-white font-semibold py-3.5 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-600/25 hover:shadow-xl"
             >
               {loading ? (
                 <>
-                  <Loader2 size={20} className="animate-spin" />
+                  <Loader2 className="h-5 w-5 animate-spin" />
                   جاري تسجيل الدخول...
                 </>
               ) : (
@@ -183,13 +196,24 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Footer */}
           <div className="mt-8 text-center text-slate-400 text-sm">
-            <p>هل تحتاج إلى حساب؟ <a href="https://wa.me/201558905021" target="_blank" rel="noopener noreferrer" className="text-blue-400 font-medium hover:text-blue-300 hover:underline">تواصل مع المسؤول</a></p>
+            <p>
+              هل تحتاج إلى حساب؟{" "}
+              <a 
+                href="https://wa.me/201558905021" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-blue-400 font-medium hover:text-blue-300 hover:underline"
+              >
+                تواصل مع المسؤول
+              </a>
+            </p>
           </div>
 
           <div className="lg:hidden mt-8 text-center">
-            <p className="text-slate-500 text-xs italic">By Eng. Ibrahim Mabrouk El-Deeb</p>
+            <p className="text-slate-500 text-xs italic">
+              By Eng. Ibrahim Mabrouk El-Deeb
+            </p>
           </div>
         </div>
       </div>

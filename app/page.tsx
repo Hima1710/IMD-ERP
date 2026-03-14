@@ -1,6 +1,8 @@
 'use client'
 
 import React, { useState, useMemo, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useStore } from '@/hooks/use-store'
 import { Sidebar } from '@/components/sidebar'
 import { POSHeader } from '@/components/pos-header'
 import { ProductCatalog } from '@/components/product-catalog'
@@ -14,6 +16,8 @@ import { Product, ProductFormData, toProductUI } from '@/lib/types'
 import { ShoppingCart as CartIcon, Package, Menu, X, ShoppingBag } from 'lucide-react'
 
 export default function POSPage() {
+  const { store, user: storeUser, loading: storeLoading, isAuthLoading, isLoaded } = useStore()
+  
   const [cartItems, setCartItems] = useState<Array<{ productId: string; quantity: number }>>([])
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [searchTerm, setSearchTerm] = useState<string>('')
@@ -24,7 +28,6 @@ export default function POSPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isReady, setIsReady] = useState(false)
-  const [user, setUser] = useState<any>(null)
   const [userRole, setUserRole] = useState<string>('cashier')
   
   // Responsive state
@@ -32,103 +35,24 @@ export default function POSPage() {
   const [mobileCartOpen, setMobileCartOpen] = useState(false)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
-  // Extract phone number from user email (e.g., 01558905021@paintmaster.com -> 01558905021)
+  // Use store user - NO local auth calls
+  const user = storeUser
+
+  // Extract phone number from user email
   const cashierPhone = user?.email ? user.email.split('@')[0] : ''
 
-  // Wait for session to be available, then fetch products
-  useEffect(() => {
-    const initializeSession = async () => {
-      try {
-        if (!supabase) {
-          console.log('❌ Supabase not configured')
-          setLoading(false)
-          return
-        }
-
-        console.log('🔄 Checking session...')
-        
-        // Try to get session with longer retries and delays
-        let user = null
-        let retries = 0
-        const maxRetries = 10
-
-        while (!user && retries < maxRetries) {
-          const { data: { session } } = await supabase.auth.getSession()
-          if (session?.user) {
-            user = session.user
-            setUser(user)
-            console.log('✅ Session found:', user.email)
-            
-            // Fetch user role from profiles
-            try {
-              const { data: profile } = await supabase
-                .from('profiles')
-                .select('role')
-                .eq('id', user.id)
-                .single()
-              
-              if (profile?.role) {
-                setUserRole(profile.role)
-                console.log('User role:', profile.role)
-              }
-            } catch (roleErr) {
-              console.log('Could not fetch role:', roleErr)
-            }
-            
-            break
-          }
-          retries++
-          if (retries < maxRetries) {
-            console.log(`⏳ Session not ready yet... retry ${retries}/${maxRetries}`)
-            // Increase delay for later retries
-            const delay = Math.min(retries * 200, 1000)
-            await new Promise(resolve => setTimeout(resolve, delay))
-          }
-        }
-
-        if (!user) {
-          console.log('❌ No user session after retries - redirecting to login')
-          setLoading(false)
-          setIsReady(false)
-          // Session not found after all retries - redirect to login
-          window.location.href = '/login'
-          return
-        }
-
-        setIsReady(true)
-        await fetchProducts()
-      } catch (err) {
-        console.error('❌ Session initialization error:', err)
-        setLoading(false)
-        setError('Failed to initialize session')
-      }
-    }
-
-    initializeSession()
-  }, [])
-
+  // FIXED: Load products when store ready (uses store user)
   const fetchProducts = async () => {
     try {
       setLoading(true)
       setError(null)
 
-      if (!supabase) {
-        console.log('Supabase not configured')
+      if (!supabase || !user) {
+        console.log('No user or supabase')
         setProducts([])
         setLoading(false)
         return
       }
-
-      // Get current session
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user) {
-        console.log('No user logged in')
-        setProducts([])
-        setLoading(false)
-        return
-      }
-
-      const user = session.user
 
       console.log('📥 Fetching products for user:', user.email)
 
@@ -140,10 +64,10 @@ export default function POSPage() {
         .single()
 
       if (!profile?.shop_id) {
-        console.log('No shop linked to this user')
+        console.log('No shop linked to this user - loading empty catalog')  // ✅ NO REDIRECT
         setProducts([])
         setLoading(false)
-        return
+        return  // Load empty state, no redirect!
       }
 
       // Fetch products for this shop only
@@ -160,14 +84,11 @@ export default function POSPage() {
         return
       }
 
-      // Map Supabase data to Product type
-      // Note: The database uses 'price' field, not 'price_buy' or 'price_sell'
       const mappedProducts: Product[] = (data || []).map((item: any) => ({
         id: item.id,
         name: item.name || '',
         category: item.category || '',
         unit: item.unit || 'قطعة',
-        // Use 'price' from database and map to both price_buy and price_sell
         price: Number(item.price) || 0,
         price_buy: Number(item.price_buy) || 0,
         stock: parseInt(item.stock || item.quantity) || 0,
@@ -187,22 +108,24 @@ export default function POSPage() {
     }
   }
 
+  // FIXED: Initialize when store ready (even no user, for isReady)
+  useEffect(() => {
+    if (isLoaded && !storeLoading && !isAuthLoading) {
+      console.log('✅ Store ready', user ? 'with user, fetching products' : 'no user')
+      setIsReady(true)
+      if (user) {
+        fetchProducts()
+      }
+    }
+  }, [store.isLoaded, storeLoading, isAuthLoading, user])
+
   const addProduct = async (productData: ProductFormData) => {
-    if (!supabase) {
-      alert('⚠️ Supabase غير مُعدّة!')
-      console.error('Supabase not configured - missing environment variables')
+    if (!supabase || !user) {
+      alert('الرجاء تسجيل الدخول أولاً')
       return null
     }
 
     try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        alert('الرجاء تسجيل الدخول أولاً')
-        return null
-      }
-
-      // Get shop_id from profiles table
       const { data: profile } = await supabase
         .from('profiles')
         .select('shop_id')
@@ -214,23 +137,18 @@ export default function POSPage() {
         return null
       }
 
-      console.log('Inserting product with data:', productData)
-
       const { data, error } = await supabase
         .from('products')
-        .insert([
-          {
-            name: productData.name,
-            category: productData.category,
-            unit: productData.unit,
-            // التعديل هنا: نربط السعر بأسماء الأعمدة الحقيقية في جدولك
-            price: productData.price,
-            price_buy: productData.price_buy,
-            stock: productData.stock,
-            min_quantity: productData.min_quantity,
-            shop_id: profile.shop_id
-          }
-        ])
+        .insert([{
+          name: productData.name,
+          category: productData.category,
+          unit: productData.unit,
+          price: productData.price,
+          price_buy: productData.price_buy,
+          stock: productData.stock,
+          min_quantity: productData.min_quantity,
+          shop_id: profile.shop_id
+        }])
         .select()
 
       if (error) {
@@ -249,15 +167,10 @@ export default function POSPage() {
     }
   }
 
-// Calculate real stats from Supabase data
+  // Stats from products
   const stats = useMemo(() => {
     const totalProducts = products.length
-    // Low Stock: products where stock <= min_quantity
-    const lowStock = products.filter(p => {
-      const qty = p.stock || 0
-      const min = p.min_quantity || 0
-      return qty <= min
-    }).length
+    const lowStock = products.filter(p => (p.stock || 0) <= (p.min_quantity || 0)).length
 
     return [
       {
@@ -279,10 +192,7 @@ export default function POSPage() {
     ]
   }, [products])
 
-  // Convert to UI format for display
-  const productsForDisplay = useMemo(() => {
-    return products.map(toProductUI)
-  }, [products])
+  const productsForDisplay = useMemo(() => products.map(toProductUI), [products])
 
   const filteredProducts = useMemo(() => {
     return productsForDisplay.filter(product => {
@@ -322,135 +232,121 @@ export default function POSPage() {
     }
   }
 
-  // Show AdminDashboard for super_admin users
+  // Admin dashboard
   if (userRole === 'super_admin' && isReady) {
     return <AdminDashboard />
   }
 
+  // Auth guard + loading
+  if (!isAuthLoading && !user) {
+    const router = useRouter()
+    router.push('/login')
+    router.refresh()
+    return null
+  }
+
+  // No more infinite loading - redirect handles unauth
+  if (storeLoading || !isReady) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-400 border-t-blue-600 mb-8"></div>
+          <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">جاري التحضير...</h2>
+          <p className="text-blue-300 text-sm">يرجى الانتظار...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex h-screen bg-slate-50 text-slate-900 overflow-hidden" dir="rtl">
-      {!isReady ? (
-        // Loading screen while session initializes
-        <div className="w-full h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900">
-          <div className="text-center">
-            <div className="mb-8">
-              <div className="inline-block">
-                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-400 border-t-blue-600"></div>
+      <MobileNav isOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
+      <FloatingMenuButton onClick={() => setMobileNavOpen(true)} />
+      <div className="hidden md:block">
+        <Sidebar selectedStore={selectedStore} onStoreChange={setSelectedStore} />
+      </div>
+
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 shadow-sm">
+          <button onClick={() => setMobileNavOpen(true)} className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 md:hidden">
+            <Menu className="w-5 h-5 text-slate-700" />
+          </button>
+          <h1 className="text-base font-bold text-slate-900">نقاط البيع</h1>
+          <button onClick={() => setMobileCartOpen(true)} className="relative p-2 rounded-xl bg-blue-600 hover:bg-blue-700">
+            <ShoppingBag className="w-5 h-5 text-white" />
+            {cartItems.length > 0 && (
+              <span className="absolute -top-1 -left-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                {cartItems.length}
+              </span>
+            )}
+          </button>
+        </div>
+
+        <POSHeader
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          selectedStore={selectedStore}
+        />
+
+        <div className="px-4 md:px-8 py-4 bg-slate-50">
+          <DashboardStats stats={stats} />
+        </div>
+
+        <div className="flex-1 flex flex-col md:flex-row overflow-hidden pb-24">
+          <div className="flex-1 overflow-y-auto p-4 md:p-8 order-2 md:order-1">
+            <ProductCatalog
+              products={filteredProducts}
+              selectedCategory={selectedCategory}
+              onCategoryChange={setSelectedCategory}
+              onAddToCart={handleAddToCart}
+              onAddProduct={addProduct}
+              loading={loading}
+            />
+            {error && (
+              <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-800">{error}</p>
               </div>
-            </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">جاري تحميل النظام</h2>
-            <p className="text-blue-300 text-sm">يرجى الانتظار...</p>
+            )}
+          </div>
+
+          <div className="hidden md:block w-80 border-r border-slate-200 bg-white overflow-y-auto order-2 shadow-sm">
+            <ShoppingCart
+              cartItems={cartItems}
+              allProducts={productsForDisplay}
+              onUpdateQuantity={handleUpdateQuantity}
+              taxRate={taxRate}
+              discountPercent={discountPercent}
+              onDiscountChange={setDiscountPercent}
+            />
           </div>
         </div>
-      ) : (
-        <>
-          {/* Mobile Navigation Drawer */}
-          <MobileNav isOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
+      </div>
 
-          {/* Floating Menu Button for Mobile */}
-          <FloatingMenuButton onClick={() => setMobileNavOpen(true)} />
-
-          {/* Sidebar - Desktop only */}
-          <div className="hidden md:block">
-            <Sidebar selectedStore={selectedStore} onStoreChange={setSelectedStore} />
-          </div>
-
-          {/* Main Content */}
-          <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Mobile Header */}
-            <div className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 shadow-sm">
-              <button
-                onClick={() => setMobileNavOpen(true)}
-className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 md:hidden"
-              >
-                <Menu className="w-5 h-5 text-slate-700" />
-              </button>
-              <h1 className="text-base font-bold text-slate-900">نقاط البيع</h1>
-              <button
-                onClick={() => setMobileCartOpen(true)}
-                className="relative p-2 rounded-xl bg-blue-600 hover:bg-blue-700"
-              >
-                <ShoppingBag className="w-5 h-5 text-white" />
-                {cartItems.length > 0 && (
-                  <span className="absolute -top-1 -left-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                    {cartItems.length}
-                  </span>
-                )}
+      {mobileCartOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setMobileCartOpen(false)} />
+          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl h-[90vh] flex flex-col shadow-2xl z-50 pb-20">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-slate-50 rounded-t-2xl">
+              <h2 className="text-lg font-bold text-slate-900">سلة المشتريات</h2>
+              <button onClick={() => setMobileCartOpen(false)} className="p-2 rounded-xl bg-slate-200 hover:bg-slate-300">
+                <X className="w-5 h-5 text-slate-700" />
               </button>
             </div>
-
-            {/* Desktop Header */}
-            <POSHeader
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              selectedStore={selectedStore}
-            />
-
-            {/* Dashboard Stats */}
-            <div className="px-4 md:px-8 py-4 bg-slate-50">
-              <DashboardStats stats={stats} />
-            </div>
-
-            {/* Main Content Area - Responsive: Stack on mobile, side by side on desktop */}
-<div className="flex-1 flex flex-col md:flex-row overflow-hidden pb-24">
-              {/* Product Catalog - Full width on mobile, left side on desktop */}
-              <div className="flex-1 overflow-y-auto p-4 md:p-8 order-2 md:order-1">
-                <ProductCatalog
-                  products={filteredProducts}
-                  selectedCategory={selectedCategory}
-                  onCategoryChange={setSelectedCategory}
-                  onAddToCart={handleAddToCart}
-                  onAddProduct={addProduct}
-                  loading={loading}
-                />
-              </div>
-
-              {/* Shopping Cart - Hidden on mobile (use bottom sheet), visible on desktop */}
-              <div className="hidden md:block w-80 border-r border-slate-200 bg-white overflow-y-auto order-2 shadow-sm">
-                <ShoppingCart
-                  cartItems={cartItems}
-                  allProducts={productsForDisplay}
-                  onUpdateQuantity={handleUpdateQuantity}
-                  taxRate={taxRate}
-                  discountPercent={discountPercent}
-                  onDiscountChange={setDiscountPercent}
-                />
-              </div>
+            <div className="flex-1 overflow-y-auto">
+              <ShoppingCart
+                cartItems={cartItems}
+                allProducts={productsForDisplay}
+                onUpdateQuantity={handleUpdateQuantity}
+                taxRate={taxRate}
+                discountPercent={discountPercent}
+                onDiscountChange={setDiscountPercent}
+              />
             </div>
           </div>
-
-          {/* Mobile Cart Bottom Sheet */}
-          {mobileCartOpen && (
-            <div className="fixed inset-0 z-50 md:hidden">
-              <div className="absolute inset-0 bg-black/50" onClick={() => setMobileCartOpen(false)} />
-              <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl h-[90vh] flex flex-col shadow-2xl z-50 pt-safe pb-20 md:pb-6">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-slate-50 rounded-t-2xl">
-                  <h2 className="text-lg font-bold text-slate-900">سلة المشتريات</h2>
-                  <button
-                    onClick={() => setMobileCartOpen(false)}
-                    className="p-2 rounded-xl bg-slate-200 hover:bg-slate-300"
-                  >
-                    <X className="w-5 h-5 text-slate-700" />
-                  </button>
-                </div>
-                <div className="flex-1 overflow-y-auto">
-                  <ShoppingCart
-                    cartItems={cartItems}
-                    allProducts={productsForDisplay}
-                    onUpdateQuantity={handleUpdateQuantity}
-                    taxRate={taxRate}
-                    discountPercent={discountPercent}
-                    onDiscountChange={setDiscountPercent}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Bottom Navigation for Mobile */}
-          <BottomNav cartCount={cartItems.length} />
-        </>
+        </div>
       )}
+
+      <BottomNav cartCount={cartItems.length} />
     </div>
   )
 }

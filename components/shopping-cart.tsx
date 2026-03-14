@@ -1,13 +1,12 @@
 'use client'
 
 import React, { useMemo, useState, useEffect, useRef } from 'react'
-import { Trash2, Plus, Minus, CreditCard, ReceiptText, X, Printer, CheckCircle, Search, UserPlus, ChevronDown } from 'lucide-react'
+import { Trash2, Plus, Minus, CreditCard, Receipt, X, Printer, CheckCircle, Search, UserPlus, ChevronDown } from 'lucide-react'
 import { Product } from '@/lib/types'
 import { supabase } from '@/lib/supabase'
 import { useStore } from '@/hooks/use-store'
 import { saveTransactionOffline, isOnline } from '@/lib/offline-db'
-import CompactInvoice from './Invoice'
-
+import CompactInvoice from './CompactInvoice'
 
 interface CartItem {
   productId: string
@@ -103,7 +102,7 @@ export function ShoppingCart({
       {/* Fixed Header */}
       <div className="h-16 p-2 border-b border-slate-200 flex items-center justify-between bg-gradient-to-r from-blue-50/80 to-slate-50/80 backdrop-blur-sm sticky top-0 z-20">
         <div className="flex items-center gap-1">
-          <ReceiptText className="w-4 h-4 text-blue-600" />
+          <Receipt className="w-4 h-4 text-blue-600" />
           <h2 className="text-xs font-bold text-slate-900">سلة المشتريات</h2>
         </div>
         <span className="text-xs font-semibold text-slate-700">{cartProducts.length} منتج</span>
@@ -113,7 +112,7 @@ export function ShoppingCart({
       <div className="flex-1 overflow-y-auto px-2 py-1 -m-1">
         {cartProducts.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-xs text-slate-500">
-            <ReceiptText className="w-8 h-8 mb-1 opacity-50" />
+            <Receipt className="w-8 h-8 mb-1 opacity-50" />
             <p>السلة فارغة</p>
           </div>
         ) : (
@@ -122,7 +121,7 @@ export function ShoppingCart({
               <CompactCartRow
                 key={item.id}
                 item={item}
-  onQuantityChange={(qty: number) => onUpdateQuantity(item.id, qty)}
+                onQuantityChange={(qty: number) => onUpdateQuantity(item.id, qty)}
                 onRemove={() => onUpdateQuantity(item.id, 0)}
               />
             ))}
@@ -193,8 +192,8 @@ export function ShoppingCart({
   )
 }
 
-// High-density Cart Row
-function CompactCartRow({ item, onQuantityChange, onRemove }: any) {
+// High-density Cart Row - NOW EXPORTED
+export function CompactCartRow({ item, onQuantityChange, onRemove }: any) {
   const itemTotal = Number(item.price || 0) * item.cartQuantity
   return (
     <div className="flex items-center py-1 px-2 border border-slate-200 rounded bg-white hover:bg-slate-50">
@@ -218,6 +217,4 @@ function CompactCartRow({ item, onQuantityChange, onRemove }: any) {
     </div>
   )
 }
-
-
 
