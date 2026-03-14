@@ -4,13 +4,12 @@ import { useEffect } from 'react'
 import { useStore } from '@/hooks/use-store'
 
 export function AuthInitializer() {
-  const initAuth = useStore.getState().initAuth
-  const isAuthLoading = useStore(state => state.isAuthLoading)
+  const { initAuth, isAuthLoading } = useStore()
   
   useEffect(() => {
-    if (!isAuthLoading) return
+    console.log('🚀 [AUTH INIT] Starting auth hydration...')
     initAuth()
-  }, [isAuthLoading])
+  }, []) // Always run once on mount
 
   if (isAuthLoading) {
     return (

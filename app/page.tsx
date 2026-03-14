@@ -116,13 +116,13 @@ export default function POSPage() {
   // FIXED: Initialize when store ready (even no user, for isReady)
   useEffect(() => {
     if (isLoaded && !storeLoading && !isAuthLoading) {
-      console.log('✅ Store ready', user ? 'with user, fetching products' : 'no user')
+      console.log('✅ Store ready', user ? `with user ${user.email}, fetching products` : 'no user - empty state')
       setIsReady(true)
       if (user) {
         fetchProducts()
       }
     }
-  }, [store.isLoaded, storeLoading, isAuthLoading, user])
+  }, [isLoaded, storeLoading, isAuthLoading, user])
 
   const addProduct = async (productData: ProductFormData) => {
     if (!supabase || !user) {
@@ -242,22 +242,22 @@ export default function POSPage() {
     return <AdminDashboard />
   }
 
-// Auth guard + loading (with client hydration fix)
-  if (isClient && !isAuthLoading && !user) {
+  // ✅ FIXED Auth guard - wait for store hydration
+  if (isClient && !isLoaded && !user) {
     const router = useRouter()
-    router.push('/login')
-    router.refresh()
+    const returnTo = encodeURIComponent(window.location.pathname)
+    router.push(`/login?return_to=${returnTo}`)
     return null
   }
 
-  // No more infinite loading - redirect handles unauth
-  if (storeLoading || !isReady) {
+  // Loading states
+  if (storeLoading || isAuthLoading || !isReady) {
     return (
       <div className="w-full h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-400 border-t-blue-600 mb-8"></div>
           <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">جاري التحضير...</h2>
-          <p className="text-blue-300 text-sm">يرجى الانتظار...</p>
+          <p className="text-blue-300 text-sm">التحقق من الحساب والمتجر...</p>
         </div>
       </div>
     )
