@@ -95,22 +95,37 @@ export const useStore = create<StoreState>()(
         const state = g()
         
         if (state.hasInitializedAuth) {
+          console.log('⏭️ [AUTH] Already initialized, skipping')
           return;
         }
         
         s({ hasInitializedAuth: true, isAuthLoading: true })
-        console.log("🚀 [AUTH] One-time initialization started...");
+        console.log("🚀 [AUTH] Starting hydration - getSession()...")
 
+        // Primary: getSession()
         const { data: { session } } = await supabase.auth.getSession()
+        console.log('📋 [AUTH] getSession result:', session ? `user ${session.user.email}` : 'no session')
         
-        if (session?.user) {
+        let user = session?.user || null
+        
+        // Fallback: getUser() if no session (cookies refreshed)
+        if (!user) {
+          console.log('🔄 [AUTH] No session, trying getUser()...')
+          const { data: { user: fallbackUser } } = await supabase.auth.getUser()
+          user = fallbackUser || null
+          console.log('📋 [AUTH] getUser fallback:', user ? `found ${user.email}` : 'no user')
+        }
+
+        if (user) {
+          console.log(`✅ [AUTH] User hydrated: ${user.email}`)
           s({ 
-            user: session.user, 
+            user, 
             isAuthenticated: true, 
             isAuthLoading: false 
           })
           g().fetchStore()
         } else {
+          console.log('🚫 [AUTH] No user found')
           s({ 
             user: null, 
             isAuthenticated: false, 
@@ -119,11 +134,12 @@ export const useStore = create<StoreState>()(
         }
 
         supabase.auth.onAuthStateChange((event, newSession) => {
-          console.log(`🔐 [AUTH EVENT] ${event}`);
+          console.log(`🔐 [AUTH EVENT] ${event}`, newSession?.user?.email || 'no user');
           
           if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
             const currentUser = g().user;
             if (newSession?.user?.id !== currentUser?.id) {
+              console.log(`🔄 [AUTH EVENT] Updating user: ${newSession?.user?.email}`)
               s({ 
                 user: newSession?.user, 
                 isAuthenticated: true, 
@@ -132,6 +148,7 @@ export const useStore = create<StoreState>()(
               g().fetchStore()
             }
           } else if (event === 'SIGNED_OUT') {
+            console.log('👋 [AUTH] Signed out')
             s({ 
               user: null, 
               isAuthenticated: false, 
