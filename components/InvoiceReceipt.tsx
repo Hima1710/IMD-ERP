@@ -95,6 +95,7 @@ export default function InvoiceReceipt(props: InvoiceProps) {
                   <span className="font-semibold">التاريخ:</span> {formattedDate}
                 </p>
               </div>
+            </div>
 
             <div className="text-center">
               {finalLogo && (
@@ -113,65 +114,70 @@ export default function InvoiceReceipt(props: InvoiceProps) {
               )}
             </div>
 
-          <div className="mb-4">
-            <p className="text-gray-700">
-              <span className="font-semibold">الكاشير:</span> {props.cashierName}
-            </p>
-          </div>
+            <div className="mb-4">
+              <p className="text-gray-700">
+                <span className="font-semibold">الكاشير:</span> {props.cashierName}
+              </p>
+            </div>
 
-          <div className="mb-6">
-            <table className="w-full border-collapse border border-gray-300">
-              <thead>
-                <tr className="bg-gray-50">
-                  <th className="border border-gray-300 px-3 py-2 text-center font-bold">#</th>
-                  <th className="border border-gray-300 px-3 py-2 text-center font-bold">الصنف</th>
-                  <th className="border border-gray-300 px-3 py-2 text-center font-bold">الكمية</th>
-                  <th className="border border-gray-300 px-3 py-2 text-center font-bold">السعر</th>
-                  <th className="border border-gray-300 px-3 py-2 text-center font-bold">الإجمالي</th>
-                </tr>
-              </thead>
-              <tbody>
-                {props.items.map((item, index) => (
-                  <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                    <td className="border border-gray-300 px-3 py-2 text-center">{index + 1}</td>
-                    <td className="border border-gray-300 px-3 py-2 text-right">{item.name}</td>
-                    <td className="border border-gray-300 px-3 py-2 text-center">{item.quantity}</td>
-                    <td className="border border-gray-300 px-3 py-2 text-center">{item.price.toFixed(2)}</td>
-                    <td className="border border-gray-300 px-3 py-2 text-center">{(item.quantity * item.price).toFixed(2)}</td>
+            <div className="mb-6">
+              <table className="w-full border-collapse border border-gray-300">
+                <thead>
+                  <tr className="bg-gray-50">
+                    <th className="border border-gray-300 px-3 py-2 text-center font-bold">#</th>
+                    <th className="border border-gray-300 px-3 py-2 text-center font-bold">الصنف</th>
+                    <th className="border border-gray-300 px-3 py-2 text-center font-bold">الكمية</th>
+                    <th className="border border-gray-300 px-3 py-2 text-center font-bold">السعر</th>
+                    <th className="border border-gray-300 px-3 py-2 text-center font-bold">الإجمالي</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {props.items.map((item, index) => (
+                    <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                      <td className="border border-gray-300 px-3 py-2 text-center">{index + 1}</td>
+                      <td className="border border-gray-300 px-3 py-2 text-right">{item.name}</td>
+                      <td className="border border-gray-300 px-3 py-2 text-center">{item.quantity}</td>
+                      <td className="border border-gray-300 px-3 py-2 text-center">{item.price.toFixed(2)}</td>
+                      <td className="border border-gray-300 px-3 py-2 text-center">{(item.quantity * item.price).toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex justify-end mb-6">
+              <div className="border border-gray-300 p-4 bg-gray-50" style={{ minWidth: '200px' }}>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">المجموع:</span>
+                    <span>{props.totalAmount.toFixed(2)} ج.م</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">الضريبة (0%):</span>
+                    <span>0.00 ج.م</span>
+                  </div>
+                  <div className="border-t border-gray-300 my-2"></div>
+                  <div className="flex justify-between">
+                    <span className="font-bold text-lg">الإجمالي النهائي:</span>
+                    <span className="font-bold text-lg">{props.totalAmount.toFixed(2)} ج.م</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t-2 border-gray-300 pt-4 mt-8">
+              <div className="text-center mb-8">
+                <p className="text-lg font-semibold text-gray-800">شكراً لتعاملكم معنا</p>
+              </div>
+              <div className="flex justify-start">
+                <div className="w-64">
+                  <div className="border-t border-gray-400 pt-2">
+                    <p className="text-sm text-gray-600">توقيع العميل</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-
-          <div className="flex justify-end mb-6">
-            <div className="border border-gray-300 p-4 bg-gray-50" style={{ minWidth: '200px' }}>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">المجموع:</span>
-                  <span>{props.totalAmount.toFixed(2)} ج.م</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">الضريبة (0%):</span>
-                  <span>0.00 ج.م</span>
-                </div>
-                <div className="border-t border-gray-300 my-2"></div>
-                <div className="flex justify-between">
-                  <span className="font-bold text-lg">الإجمالي النهائي:</span>
-                  <span className="font-bold text-lg">{props.totalAmount.toFixed(2)} ج.م</span>
-                </div>
-            </div>
-
-          <div className="border-t-2 border-gray-300 pt-4 mt-8">
-            <div className="text-center mb-8">
-              <p className="text-lg font-semibold text-gray-800">شكراً لتعاملكم معنا</p>
-            </div>
-            <div className="flex justify-start">
-              <div className="w-64">
-                <div className="border-t border-gray-400 pt-2">
-                  <p className="text-sm text-gray-600">توقيع العميل</p>
-                </div>
-            </div>
         </div>
 
         <div className="print:hidden absolute bottom-6 left-1/2 transform -translate-x-1/2">
@@ -184,32 +190,33 @@ export default function InvoiceReceipt(props: InvoiceProps) {
           </button>
         </div>
 
-      <style jsx global>{`
-        @media print {
-          @page {
-            size: A4;
-            margin: 10mm;
+        <style jsx global>{`
+          @media print {
+            @page {
+              size: A4;
+              margin: 10mm;
+            }
+            body * {
+              visibility: hidden;
+            }
+            .invoice-container,
+            .invoice-container * {
+              visibility: visible;
+            }
+            .invoice-container {
+              position: absolute;
+              left: 0;
+              top: 0;
+              width: 100%;
+              box-shadow: none;
+            }
+            * {
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
           }
-          body * {
-            visibility: hidden;
-          }
-          .invoice-container,
-          .invoice-container * {
-            visibility: visible;
-          }
-          .invoice-container {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            box-shadow: none;
-          }
-          * {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-        }
-      `}</style>
+        `}</style>
+      </div>
     </div>
   )
 }
