@@ -46,8 +46,7 @@ export default function ProductsPage() {
   const [savingProduct, setSavingProduct] = useState(false)
 
 // ✅ Centralized auth via store
-  const { store, user, isLoaded, loading, isAuthLoading } = useStore()
-  const storeLoading = loading
+  const { store, user, isLoaded, loading: storeLoading, isAuthLoading } = useStore()
 
 
 

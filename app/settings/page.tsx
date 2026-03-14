@@ -18,8 +18,7 @@ interface StoreSettings {
 }
 
 export default function SettingsPage() {
-  const { store: globalStore, loading, isLoaded, refreshStore } = useStore()
-  const storeLoading = loading
+  const { store: globalStore, loading: storeLoading, isLoaded, refreshStore } = useStore()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
