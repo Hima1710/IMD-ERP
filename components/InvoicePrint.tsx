@@ -172,6 +172,7 @@ export default function InvoicePrint(props: InvoiceProps) {
                   <p className="text-sm text-gray-600">توقيع العميل</p>
                 </div>
             </div>
+          </div>
         </div>
 
         <div className="print:hidden absolute bottom-6 left-1/2 transform -translate-x-1/2">
@@ -184,32 +185,33 @@ export default function InvoicePrint(props: InvoiceProps) {
           </button>
         </div>
 
-      <style jsx global>{`
-        @media print {
-          @page {
-            size: A4;
-            margin: 10mm;
+        <style jsx global>{`
+          @media print {
+            @page {
+              size: A4;
+              margin: 10mm;
+            }
+            body * {
+              visibility: hidden;
+            }
+            .invoice-container,
+            .invoice-container * {
+              visibility: visible;
+            }
+            .invoice-container {
+              position: absolute;
+              left: 0;
+              top: 0;
+              width: 100%;
+              box-shadow: none;
+            }
+            * {
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
           }
-          body * {
-            visibility: hidden;
-          }
-          .invoice-container,
-          .invoice-container * {
-            visibility: visible;
-          }
-          .invoice-container {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            box-shadow: none;
-          }
-          * {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-        }
-      `}</style>
+        `}</style>
+      </div>
     </div>
   )
 }
