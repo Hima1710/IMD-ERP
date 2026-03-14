@@ -7,7 +7,6 @@ import { BottomNav } from '@/components/BottomNav'
 import { MobileNav, FloatingMenuButton } from '@/components/MobileNav'
 import { supabase } from '@/lib/supabase'
 import { useStore } from '@/hooks/use-store'
-import React from 'react'
 import { Store, Camera, Save, Loader2, AlertCircle, CheckCircle, Menu } from 'lucide-react'
 
 interface StoreSettings {

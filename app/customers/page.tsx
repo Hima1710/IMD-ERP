@@ -6,6 +6,7 @@ import { POSHeader } from '@/components/pos-header'
 import { BottomNav } from '@/components/BottomNav'
 import { MobileNav, FloatingMenuButton } from '@/components/MobileNav'
 import { supabase } from '@/lib/supabase'
+import { useStore } from '@/hooks/use-store'
 import { 
   Plus, 
   Trash2, 
@@ -34,6 +35,7 @@ import {
   ShoppingCart
 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+
 
 // ============== TYPES ==============
 
@@ -142,6 +144,8 @@ const EXPENSE_CATEGORIES = [
 ]
 
 export default function FinanceHubPage() {
+  const { store, storeLoading, isLoaded } = useStore()
+  
   // ============== STATE ==============
   const [activeTab, setActiveTab] = useState<'customers' | 'suppliers' | 'expenses'>('customers')
   const [shopId, setShopId] = useState<string | null>(null)

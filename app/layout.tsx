@@ -6,16 +6,8 @@ import { AuthInitializer } from '@/components/AuthInitializer'
 
 import './globals.css'
 
-// TEMP ENV VERIFICATION - Remove after confirming vars load
-if (typeof window !== 'undefined') {
-  console.log('🌐 CLIENT ENV:', {
-    SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'LOADED' : 'MISSING',
-    SUPABASE_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'LOADED' : 'MISSING'
-  })
-}
-
-const inter = Inter({ subsets: ["latin"], variable: '--font-inter' });
-const cairo = Cairo({ subsets: ["arabic", "latin"], variable: '--font-cairo', weight: ['300', '400', '500', '600', '700'] });
+  const inter = Inter({ subsets: ["latin"], variable: '--font-inter' });
+  const cairo = Cairo({ subsets: ["arabic", "latin"], variable: '--font-cairo', weight: ['300', '400', '500', '600', '700'] });
 
 export const metadata: Metadata = {
   title: 'IMD ERP - نظام إدارة المستودع',

@@ -17,6 +17,11 @@ import { ShoppingCart as CartIcon, Package, Menu, X, ShoppingBag } from 'lucide-
 
 export default function POSPage() {
   const { store, user: storeUser, loading: storeLoading, isAuthLoading, isLoaded } = useStore()
+  const [isClient, setIsClient] = useState(false)
+  
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
   
   const [cartItems, setCartItems] = useState<Array<{ productId: string; quantity: number }>>([])
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
@@ -237,8 +242,8 @@ export default function POSPage() {
     return <AdminDashboard />
   }
 
-  // Auth guard + loading
-  if (!isAuthLoading && !user) {
+// Auth guard + loading (with client hydration fix)
+  if (isClient && !isAuthLoading && !user) {
     const router = useRouter()
     router.push('/login')
     router.refresh()
