@@ -346,11 +346,12 @@ export default function POSPage() {
                 onUpdateQuantity={handleUpdateQuantity}
                 taxRate={taxRate}
                 discountPercent={discountPercent}
-                onDiscountChange={setDiscountChange}
+                onDiscountChange={setDiscountPercent}
               />
             </div>
           </div>
         </div>
+
 
       )}
 
