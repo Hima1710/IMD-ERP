@@ -153,9 +153,11 @@ export default function FinanceHubPage() {
   const [shopId, setShopId] = useState<string | null>(null)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   // Customer State
   const [customers, setCustomers] = useState<Customer[]>([])
+
   const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [showAddModal, setShowAddModal] = useState(false)
@@ -274,12 +276,14 @@ export default function FinanceHubPage() {
       }
 
       console.log('👥 [CUSTOMERS] Fetching for shop:', store.id)
+      setError(null)
 
       const { data: customersData, error } = await supabase
         .from('customers')
         .select('*')
         .eq('shop_id', store.id)  // ✅ Direct store.id
         .order('name', { ascending: true })
+
 
       if (error) {
         console.error('Error fetching customers:', error)
@@ -1212,6 +1216,14 @@ export default function FinanceHubPage() {
 
               {creditTab === 'all' && (
                 <>
+                  {error && (
+                    <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-center justify-between">
+                      <p className="text-red-700 text-sm">{error}</p>
+                      <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700 text-sm underline">
+                        إغلاق
+                      </button>
+                    </div>
+                  )}
                   {loading ? (
                     <div className="flex items-center justify-center h-32">
                       <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
@@ -1222,6 +1234,7 @@ export default function FinanceHubPage() {
                       <h3 className="text-lg font-semibold text-slate-700 mb-2">لا يوجد عملاء</h3>
                     </div>
                   ) : (
+
                     <div className="hidden md:block bg-white rounded-2xl shadow-sm overflow-hidden">
                       <table className="w-full">
                         <thead>
