@@ -145,8 +145,7 @@ const EXPENSE_CATEGORIES = [
 
 export default function FinanceHubPage() {
   // سمينا الـ loading اللي جاية من الستور authLoading عشان نفرقها
-  const { store, loading: authLoading, isLoaded } = useStore()
-  const storeLoading = authLoading
+  const { store, loading: storeLoading, isLoaded } = useStore()
   
   // ============== STATE ==============
   const [activeTab, setActiveTab] = useState<'customers' | 'suppliers' | 'expenses'>('customers')

@@ -51,7 +51,7 @@ interface TopProduct {
 }
 
 export default function ReportsPage() {
-  const { store, isLoaded, loading: isAuthLoading } = useStore()
+  const { store, isLoaded, loading: storeLoading } = useStore()
   
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

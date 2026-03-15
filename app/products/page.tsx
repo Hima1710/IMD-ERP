@@ -46,8 +46,7 @@ export default function ProductsPage() {
   const [savingProduct, setSavingProduct] = useState(false)
 
 // غيرنا اسم loading لـ authLoading عشان متبقاش زي اللي فوقها
-const { store, user, isLoaded, loading: authLoading, isAuthLoading } = useStore()
-const storeLoading = authLoading
+const { store, user, isLoaded, loading: storeLoading, isAuthLoading } = useStore()
 
 
 

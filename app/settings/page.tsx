@@ -19,8 +19,7 @@ interface StoreSettings {
 
 export default function SettingsPage() {
   // غيرنا اسم loading لـ authLoading عشان ميتخانقش مع الـ useState اللي تحتها
-  const { store: globalStore, loading: authLoading, isLoaded, refreshStore } = useStore()
-  const storeLoading = authLoading
+  const { store: globalStore, loading: storeLoading, isLoaded, refreshStore } = useStore()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
