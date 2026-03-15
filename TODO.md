@@ -1,15 +1,17 @@
-# TODO List for IMD-ERP
+# IMD-ERP Progress
 
-## Current Progress
-- [x] Upload all local files/updates to GitHub (blackboxai-upload-all-local-updates branch)
-- [x] Fix ChartTooltipContent TS props to any (build fix)
+## Completed ✅
+- Upload all files to GitHub branch `blackboxai-upload-all-local-updates`
+- Fix chart.tsx TS props (TooltipContent: any, map types)
+- Fix chart LegendContent props (payload/verticalAlign: any)
+- Fix resizable.tsx for react-resizable-panels v4 (named imports, no prefix)
 
-## Remaining
-- Create/merge PR to main: https://github.com/Hima1710/IMD-ERP/compare/main...blackboxai-upload-all-local-updates
-- Test Vercel deploy after merge
-- [ ] AUTH fixes (TODO-AUTH-FIX.md)
-- [ ] Mobile optimizations (INVOICE_MOBILE_TODO.md)
-- [ ] Debt payments (TODO_DEBT_PAYMENT.md)
-- [ ] Offline sync (TODO_OFFLINE_SYNC.md)
+## Server Status
+- Dev server: http://localhost:3000 (Supabase connected, pages /products /customers /settings loading)
+- Build: Compiled successfully
 
-**Next: Merge PR → Deploy → Test**
+## Next
+- Merge PR: https://github.com/Hima1710/IMD-ERP/compare/main...blackboxai-upload-all-local-updates → Deploy Vercel
+- Fix remaining TODOs (AUTH, mobile, offline)
+
+**Project ready!**

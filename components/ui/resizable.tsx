@@ -1,56 +1,73 @@
 'use client'
 
-import * as React from 'react'
-import { GripVerticalIcon } from 'lucide-react'
-import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels"
+import * as React from "react"
+import { GripVertical } from "lucide-react"
 
-import { cn } from '@/lib/utils'
+import * as ResizablePrimitive from "react-resizable-panels"
 
-function ResizablePanelGroup({
-  className,
-  ...props
-React.ComponentProps<typeof PanelGroup>) {
-  return (
-<PanelGroup
-      data-slot="resizable-panel-group"
-      className={cn(
-        'flex h-full w-full data-[panel-group-direction=vertical]:flex-col',
-        className,
-      )}
-      {...props}
-    />
-  )
-}
+import { cn } from "@/lib/utils"
 
-function ResizablePanel({
-  ...props
-React.ComponentProps<typeof Panel>) {
-<Panel data-slot="resizable-panel" {...props} />
-}
+const ResizablePanelGroup = React.forwardRef<
+  React.ElementRef<typeof ResizablePrimitive.PanelGroup>,
+  React.ComponentPropsWithoutRef<typeof ResizablePrimitive.PanelGroup>
+>(({ className, ...props }, ref) => (
+  <ResizablePrimitive.PanelGroup
+    ref={ref}
+    className={cn(
+      "flex h-full w-full data-[panel-group-direction=vertical]:flex-col",
+      className
+    )}
+    {...props}
+  />
+))
+ResizablePanelGroup.displayName = ResizablePrimitive.PanelGroup.displayName
 
-function ResizableHandle({
-  withHandle,
-  className,
-  ...props
-React.ComponentProps<typeof PanelResizeHandle> & {
-  withHandle?: boolean
-}) {
-  return (
-<PanelResizeHandle
-      data-slot="resizable-handle"
-      className={cn(
-        'bg-border focus-visible:ring-ring relative flex w-px items-center justify-center after:absolute after:inset-y-0 after:left-1/2 after:w-1 after:-translate-x-1/2 focus-visible:ring-1 focus-visible:ring-offset-1 focus-visible:outline-hidden data-[panel-group-direction=vertical]:h-px data-[panel-group-direction=vertical]:w-full data-[panel-group-direction=vertical]:after:left-0 data-[panel-group-direction=vertical]:after:h-1 data-[panel-group-direction=vertical]:after:w-full data-[panel-group-direction=vertical]:after:translate-x-0 data-[panel-group-direction=vertical]:after:-translate-y-1/2 [&[data-panel-group-direction=vertical]>div]:rotate-90',
-        className,
-      )}
-      {...props}
-    >
-      {withHandle && (
-        <div className="bg-border z-10 flex h-4 w-3 items-center justify-center rounded-xs border">
-          <GripVerticalIcon className="size-2.5" />
-        </div>
-      )}
-    </ResizablePrimitive.PanelResizeHandle>
-  )
-}
+const ResizablePanel = React.forwardRef<
+  React.ElementRef<typeof ResizablePrimitive.Panel>,
+  React.ComponentPropsWithoutRef<typeof ResizablePrimitive.Panel>
+>(({ className, ...props }, ref) => (
+  <ResizablePrimitive.Panel
+    ref={ref}
+    className={cn(
+      "relative flex w-full grow overflow-hidden data-[panel-group-direction=vertical]:flex-col data-[panel-group-direction=vertical]:w-full data-[panel-group-direction=horizontal]:flex-row",
+      className
+    )}
+    {...props}
+  />
+))
+ResizablePanel.displayName = ResizablePrimitive.Panel.displayName
 
-export { ResizablePanelGroup, ResizablePanel, ResizableHandle }
+const ResizablePanelResizeHandle = React.forwardRef<
+  React.ElementRef<typeof ResizablePrimitive.PanelResizeHandle>,
+  React.ComponentPropsWithoutRef<typeof ResizablePrimitive.PanelResizeHandle>
+>(({ className, orientation = "vertical", ...props }, ref) => (
+  <ResizablePrimitive.PanelResizeHandle
+    ref={ref}
+    className={cn(
+      "flex touch-none select-none items-center justify-center p-1 data-[panel-resize-handle-direction=horizontal]:w-[2px] data-[panel-resize-handle-direction=horizontal]:h-4 data-[panel-resize-handle-direction=vertical]:h-[2px] data-[panel-resize-handle-direction=vertical]:w-4 data-[panel-resize-handle-direction=vertical]:rotate-90",
+      className
+    )}
+    orientation={orientation}
+    {...props}
+  >
+    <div className="w-2 h-2 bg-border rounded-full" />
+  </ResizablePrimitive.PanelResizeHandle>
+))
+ResizablePanelResizeHandle.displayName =
+  ResizablePrimitive.PanelResizeHandle.displayName
+
+const ResizableHandle = ({ className, orientation, ...props }: React.ComponentProps<typeof ResizablePanelResizeHandle>) => (
+  <ResizablePanelResizeHandle
+    className={cn(
+      "touch-none select-none flex h-px w-full items-center justify-center bg-border",
+      '[data-orientation=vertical]:h-full [data-orientation=vertical]:w-px',
+      className
+    )}
+    orientation={orientation}
+    {...props}
+  >
+    <GripVertical className="h-3 w-3" />
+  </ResizablePanelResizeHandle>
+)
+
+export { ResizablePanel, ResizablePanelGroup, ResizableHandle }
