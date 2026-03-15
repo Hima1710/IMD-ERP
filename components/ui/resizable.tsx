@@ -56,7 +56,13 @@ const ResizablePanelResizeHandle = React.forwardRef<
 ResizablePanelResizeHandle.displayName =
   ResizablePrimitive.PanelResizeHandle.displayName
 
-const ResizableHandle = ({ className, orientation, ...props }: React.ComponentProps<typeof ResizablePanelResizeHandle>) => (
+const ResizableHandle = ({
+  className,
+  orientation = "vertical",
+  ...props
+}: React.ComponentPropsWithoutRef<typeof ResizablePanelResizeHandle> & {
+  orientation?: "horizontal" | "vertical"
+}) => (
   <ResizablePanelResizeHandle
     className={cn(
       "touch-none select-none flex h-px w-full items-center justify-center bg-border",
