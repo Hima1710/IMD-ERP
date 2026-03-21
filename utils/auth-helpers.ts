@@ -1,0 +1,1 @@
+export const formatPhoneToEmail = (phone: string): string => `${phone}@paintmaster.com`;
