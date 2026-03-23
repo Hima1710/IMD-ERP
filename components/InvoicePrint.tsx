@@ -62,7 +62,7 @@ className="print:hidden absolute top-4 left-4 bg-red-500 hover:bg-red-600 text-w
           fontSize: '13px',
           lineHeight: '1.4',
           border: 'none',
-        }}"
+        }}
       >
 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 print:absolute print:inset-0 print:z-[-1] print:opacity-[0.08] print:pointer-events-none watermark-print">
           <span 
