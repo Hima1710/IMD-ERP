@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import type { Metadata, Viewport } from 'next'
 import { Cairo } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/react'
