@@ -176,7 +176,7 @@ export default function POSPage() {
   // Stats from products
   const stats = useMemo(() => {
     const totalProducts = products.length
-    const lowStock = products.filter(p => (p.stock || 0) <= (p.min_quantity || 0)).length
+    const lowStock = products.filter(p => (p.stock || 0) <= (p.min_stock || 0)).length // ✅ استخدمنا min_stock لتطابق النوع
 
     return [
       {
