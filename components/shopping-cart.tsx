@@ -73,10 +73,10 @@ export function ShoppingCart({
   const [open, setOpen] = useState(false)
 
   const filteredCustomers = useMemo(() => {
-    return customers.filter(customer =>
-      customer.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
-      customer.phone.includes(customerSearch)
-    )
+ return customers.filter(customer =>
+  customer.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
+  (customer.phone?.includes(customerSearch) ?? false) // ✅ ضفنا ? و تأكدنا إن النتيجة boolean
+)
   }, [customers, customerSearch])
 
   const cartProducts = useMemo(() => {
