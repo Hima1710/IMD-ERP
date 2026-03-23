@@ -7,8 +7,6 @@ const nextConfig = {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   },
-<<<<<<< HEAD
-=======
   async headers() {
     return [
       {
@@ -22,8 +20,6 @@ const nextConfig = {
       },
     ]
   },
->>>>>>> blackboxai-upload-all-changes
 }
 
 export default nextConfig
-
