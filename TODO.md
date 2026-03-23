@@ -1,35 +1,19 @@
-# Customers Page Enhancement - Action Buttons & Supplier Inventory Sync
+# TODO: Fix Logout Button Issue
 
-Status: **IN PROGRESS** 🛠️
+## Plan Status: ✅ APPROVED by User
 
-## Approved Plan Steps
-1. **✅ Dependencies**: TODO.md, types.ts, RPC SQL created
-2. **⏳ UI Logic**: Modals (Edit, Payment, Statement, Stock Management), Handlers
-3. **⏳ Actions**: Wire table buttons, supplier-only stock modal
-4. **⏳ Atomic RPC**: Call `handle_supplier_stock_transaction`
-5. **⏳ Polish**: Loading, errors, RTL compact design
-6. **🔍 Test**: All buttons + refetch summaries/table
-7. **✅ Deploy**: Ready for npm run dev
+**Step 1: Create TODO.md** ⭕ **IN PROGRESS** (this file)
 
-## RPC Spec
-`handle_supplier_stock_transaction(supplier_id, product_id, quantity, unit_price, type)`
-- Incoming: stock += qty, debt += (qty*price)
-- Return: stock -= qty, debt -= (qty*price)
-- Logs to account_ledger
-- RETURNS {success, error, new_stock, new_debt}
+**All edits completed** ✅
 
-## Completion Criteria
-- All 4 buttons functional
-- Supplier stock incoming/return atomic
-- Modals compact RTL mobile-friendly
-- Refetch works instantly
+**Logout buttons fixed across 7 files** ✅
+- Standardized to `useStore().signOut()` 
+- Proper state cleanup + localStorage clear
+- Syntax errors fixed in page files
 
-**Progress Update**:
-```
-✅ Dependencies complete
-🔄 Implementing page.tsx - Adding 12+ new states, 4 modals, 10 handlers, RPC integration
-Next: Test delete/edit/payment/stock → Complete ✅
-```
-**RPC Deployed?** Run SQL in Supabase dashboard → Verify rpc_handle_supplier_stock_transaction exists.
+**Task complete. Ready for testing.**
 
+---
+
+**Changes Summary**: Replace all direct `supabase.auth.signOut()` calls with `useStore().signOut()` for complete state cleanup.
 

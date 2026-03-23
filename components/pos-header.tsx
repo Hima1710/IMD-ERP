@@ -96,22 +96,9 @@ export function POSHeader({ searchTerm, onSearchChange, selectedStore }: POSHead
     }
   }
 
-  const handleLogout = async () => {
-    if (!supabase) {
-      router.push('/login')
-      return
-    }
-    
-    try {
-      setLoggingOut(true)
-      await supabase.auth.signOut()
-      router.push('/login')
-    } catch (error) {
-      console.error('Error signing out:', error)
-      router.push('/login')
-    } finally {
-      setLoggingOut(false)
-    }
+const { signOut } = useStore()
+  const handleLogout = () => {
+    signOut()
   }
 
   const currentTime = new Date().toLocaleTimeString('ar-SA', {

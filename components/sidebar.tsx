@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
 import { useStore } from '@/hooks/use-store'
 import {
   LayoutDashboard,
@@ -21,8 +20,8 @@ interface SidebarProps {
 }
 
 export function Sidebar({ selectedStore = 'settings', onStoreChange }: SidebarProps) {
-  const router = useRouter()
-  const { store: globalStore, user } = useStore()
+const router = useRouter()
+  const { store: globalStore, user, signOut } = useStore()
   const [loggingOut, setLoggingOut] = useState(false)
   const [userLabel, setUserLabel] = useState('')
 
@@ -35,17 +34,8 @@ export function Sidebar({ selectedStore = 'settings', onStoreChange }: SidebarPr
     }
   }, [user])
 
-  const handleLogout = async () => {
-    if (!supabase) return
-    setLoggingOut(true)
-    try {
-      await supabase.auth.signOut()
-      router.push('/login')
-    } catch (error) {
-      console.error('Error signing out:', error)
-    } finally {
-      setLoggingOut(false)
-    }
+  const handleLogout = () => {
+    signOut()
   }
 
   return (

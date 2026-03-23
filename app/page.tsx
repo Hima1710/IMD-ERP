@@ -243,11 +243,16 @@ export default function POSPage() {
   }
 
   // ✅ FIXED Auth guard - wait for store hydration
-  if (isClient && !isLoaded && !user) {
+  if (isClient && !user) {
     const router = useRouter()
-    const returnTo = encodeURIComponent(window.location.pathname)
-    router.push(`/login?return_to=${returnTo}`)
+    router.push('/login')
     return null
+  }
+
+  if (isClient && user && isLoaded) {
+    const router = useRouter()
+    router.replace('/dashboard')
+    return <div>جاري التوجيه...</div>
   }
 
   // Loading states

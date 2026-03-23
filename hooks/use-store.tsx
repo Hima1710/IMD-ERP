@@ -43,131 +43,159 @@ export const useStore = create<StoreState>()(
       isLoaded: false,
       isAuthLoading: true,
       hasInitializedAuth: false,
-      
+
       fetchStore: async () => {
-        const s = set
         try {
           const { data: { user: currentUser } } = await supabase.auth.getUser()
-          
-          if (!currentUser || !currentUser.id) {
-            s({ loading: false, isLoaded: true })
+
+          if (!currentUser?.id) {
+            set({ loading: false, isLoaded: true, store: defaultStore })
             return
           }
 
-          const { data: profile } = await supabase
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('shop_id, full_name')
             .eq('id', currentUser.id)
             .single()
 
-          if (!profile?.shop_id) {
-            s({ loading: false, isLoaded: true })
+          if (profileError || !profile?.shop_id) {
+            console.warn('[STORE] No profile/shop for:', currentUser.email)
+            set({ loading: false, isLoaded: true, store: defaultStore })
             return
           }
 
-          const { data: shopData } = await supabase
+          const { data: shopData, error: shopError } = await supabase
             .from('shops')
             .select('*')
             .eq('id', profile.shop_id)
             .single()
 
-          s({
+          if (shopError || !shopData) {
+            console.warn('[STORE] Shop not found:', profile.shop_id)
+            set({ loading: false, isLoaded: true, store: defaultStore })
+            return
+          }
+
+          console.log(`✅ [STORE] ${shopData.name} → ${currentUser.email}`)
+
+          set({
             store: {
-              id: shopData?.id || '',
-              shopId: shopData?.id || null,
-              name: shopData?.name || '',
-              phone: shopData?.phone || '',
-              address: shopData?.location || '',
-              logo_url: shopData?.logo_url || '',
+              id: shopData.id,
+              shopId: shopData.id,
+              name: shopData.name || '',
+              phone: shopData.phone || '',
+              address: shopData.location || '',
+              logo_url: shopData.logo_url || '',
             },
             loading: false,
-            isLoaded: true
+            isLoaded: true,
           })
         } catch (error) {
           console.error('[STORE]', error)
-          s({ loading: false, isLoaded: true })
+          set({ loading: false, isLoaded: true, store: defaultStore })
         }
       },
 
       initAuth: async () => {
-        const s = set
-        const g = get
-        const state = g()
-        
+        const state = get()
+
         if (state.hasInitializedAuth) {
           console.log('⏭️ [AUTH] Already initialized, skipping')
-          return;
+          return
         }
-        
-        s({ hasInitializedAuth: true, isAuthLoading: true })
-        console.log("🚀 [AUTH] Starting hydration - getSession()...")
 
-        // Primary: getSession()
+        set({ hasInitializedAuth: true, isAuthLoading: true })
+        console.log('🚀 [AUTH INIT] Starting auth hydration...')
+
         const { data: { session } } = await supabase.auth.getSession()
-        console.log('📋 [AUTH] getSession result:', session ? `user ${session.user.email}` : 'no session')
-        
         let user = session?.user || null
-        
-        // Fallback: getUser() if no session (cookies refreshed)
+
         if (!user) {
-          console.log('🔄 [AUTH] No session, trying getUser()...')
           const { data: { user: fallbackUser } } = await supabase.auth.getUser()
           user = fallbackUser || null
-          console.log('📋 [AUTH] getUser fallback:', user ? `found ${user.email}` : 'no user')
         }
 
         if (user) {
-          console.log(`✅ [AUTH] User hydrated: ${user.email}`)
-          s({ 
-            user, 
-            isAuthenticated: true, 
-            isAuthLoading: false 
-          })
-          g().fetchStore()
+          console.log(`✅ [AUTH] ${user.email}`)
+          set({ user, isAuthenticated: true, isAuthLoading: false })
+          get().fetchStore()
         } else {
-          console.log('🚫 [AUTH] No user found')
-          s({ 
-            user: null, 
-            isAuthenticated: false, 
-            isAuthLoading: false 
-          })
+          set({ user: null, isAuthenticated: false, isAuthLoading: false, loading: false, isLoaded: true, store: defaultStore })
         }
 
         supabase.auth.onAuthStateChange((event, newSession) => {
-          console.log(`🔐 [AUTH EVENT] ${event}`, newSession?.user?.email || 'no user');
-          
-          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-            const currentUser = g().user;
+          console.log(`🔐 [AUTH EVENT] ${event}`, newSession?.user?.email || '')
+
+          if (event === 'SIGNED_IN') {
+            const currentUser = get().user
             if (newSession?.user?.id !== currentUser?.id) {
-              console.log(`🔄 [AUTH EVENT] Updating user: ${newSession?.user?.email}`)
-              s({ 
-                user: newSession?.user, 
-                isAuthenticated: true, 
-                isAuthLoading: false 
+              console.log(`🔄 [AUTH] Switch → ${newSession?.user?.email}`)
+              set({
+                user: newSession?.user,
+                isAuthenticated: true,
+                isAuthLoading: false,
+                store: defaultStore,
+                isLoaded: false,
               })
-              g().fetchStore()
+              get().fetchStore()
             }
+          } else if (event === 'TOKEN_REFRESHED') {
+            set({ user: newSession?.user, isAuthenticated: true, isAuthLoading: false })
           } else if (event === 'SIGNED_OUT') {
             console.log('👋 [AUTH] Signed out')
-            s({ 
-              user: null, 
-              isAuthenticated: false, 
+            set({
+              user: null,
+              isAuthenticated: false,
               isAuthLoading: false,
-              store: defaultStore
+              loading: false,
+              isLoaded: true,
+              store: defaultStore,
+              hasInitializedAuth: false,
             })
           }
         })
       },
 
       refreshStore: () => get().fetchStore(),
-      
+
       signOut: async () => {
-        await supabase.auth.signOut()
-      }
+        try {
+          // 1. امسح localStorage
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('pos-store')
+          }
+          // 2. reset الـ state
+          set({
+            user: null,
+            isAuthenticated: false,
+            store: defaultStore,
+            isLoaded: false,
+            hasInitializedAuth: false,
+          })
+          // 3. signOut من Supabase
+          await supabase.auth.signOut()
+          // 4. full reload لصفحة login
+          if (typeof window !== 'undefined') {
+            window.location.href = '/login'
+          }
+        } catch (error) {
+          console.error('[AUTH] signOut error:', error)
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('pos-store')
+            window.location.href = '/login'
+          }
+        }
+      },
     }),
     {
-      name: 'pos-store'
+      name: 'pos-store',
+      // ✅ مش بنحفظ hasInitializedAuth في localStorage
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+        store: state.store,
+      }),
     }
   )
 )
-

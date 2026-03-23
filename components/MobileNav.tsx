@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
 import { useStore } from '@/hooks/use-store'
 import {
   LayoutDashboard,
@@ -23,9 +22,9 @@ interface MobileNavProps {
 }
 
 export function MobileNav({ isOpen, onClose }: MobileNavProps) {
-  const router = useRouter()
+const router = useRouter()
   const pathname = usePathname()
-  const { store: globalStore, user } = useStore()
+  const { store: globalStore, user, signOut } = useStore()
   const [loggingOut, setLoggingOut] = useState(false)
   const [userLabel, setUserLabel] = useState<string>('')
 
@@ -39,17 +38,8 @@ export function MobileNav({ isOpen, onClose }: MobileNavProps) {
     }
   }, [user])
 
-  const handleLogout = async () => {
-    if (!supabase) return
-    setLoggingOut(true)
-    try {
-      await supabase.auth.signOut()
-      router.push('/login')
-    } catch (error) {
-      console.error('Error signing out:', error)
-    } finally {
-      setLoggingOut(false)
-    }
+  const handleLogout = () => {
+    signOut()
   }
 
   const handleLinkClick = () => {
