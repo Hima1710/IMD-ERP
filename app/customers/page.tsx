@@ -811,9 +811,9 @@ export default function CustomersPage() {
                               </div>
                               <div>
                                 <span className="font-bold text-slate-900 text-sm">{acc.name}</span>
-                                {acc.category === "VIP" && (
-                                  <span className="mr-1.5 px-1.5 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-lg font-bold">⭐</span>
-                                )}
+{acc.category === "vip" && ( // ← خليتها حروف صغيرة عشان تطابق النوع (Type)
+  <span className="mr-1.5 px-1.5 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-lg font-bold">⭐</span>
+)}
                               </div>
                             </div>
                           </td>
@@ -898,9 +898,9 @@ export default function CustomersPage() {
                         <div>
                           <div className="flex items-center gap-1.5">
                             <h3 className="font-black text-slate-900 text-sm">{acc.name}</h3>
-                            {acc.category === "VIP" && (
-                              <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-lg font-bold">⭐</span>
-                            )}
+{acc.category === "vip" && ( // ← خليتها حروف صغيرة عشان تطابق النوع (Type)
+  <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-lg font-bold">⭐</span>
+)}
                           </div>
                           <p className="text-xs text-slate-400 font-mono">{acc.account_number}</p>
                         </div>
