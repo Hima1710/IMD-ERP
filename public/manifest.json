@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "name": "IMD ERP - نظام إدارة المستودع",
   "short_name": "IMD ERP",
   "description": "Professional Warehouse Management System - نظام إدارة المستودع والمبيعات",
@@ -41,6 +42,21 @@
       "name": "العملاء",
       "url": "/customers",
       "description": "إدارة العملاء"
+=======
+  "name": "IMD ERP - PWA",
+  "short_name": "IMD ERP",
+  "description": "IMD ERP Point of Sale System",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#4f46e5",
+  "icons": [
+    {
+      "src": "/pwa-icon.jpeg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+>>>>>>> blackboxai-upload-all-changes
     }
   ]
 }

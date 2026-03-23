@@ -42,28 +42,51 @@ export default function InvoicePrint(props: InvoiceProps) {
   const finalLogo = props.shopLogo || globalStore.logo_url
 
   return (
+<<<<<<< HEAD
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" dir="rtl">
       <button
         onClick={props.onClose}
         className="print:hidden absolute top-4 left-4 bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow-lg transition-colors z-50"
+=======
+<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 print:hidden" dir="rtl">
+      <button
+        onClick={props.onClose}
+className="print:hidden absolute top-4 left-4 bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow-lg transition-colors z-50"
+>>>>>>> blackboxai-upload-all-changes
       >
         <X className="w-6 h-6" />
       </button>
 
       <div 
+<<<<<<< HEAD
         className="invoice-container bg-white shadow-2xl relative overflow-auto max-h-[95vh]"
         style={{ 
           width: '210mm',
           minHeight: '297mm',
           padding: '15mm',
+=======
+        className="invoice-container bg-white shadow-2xl relative overflow-auto max-h-[95vh] print:shadow-none print:border-none print:overflow-visible print:max-h-none print:w-full print:min-h-[29.7cm] print:m-0 print:p-[20px] print:box-border print:shadow-none"
+        style={{ 
+          width: '100%',
+          maxWidth: '210mm',
+          minHeight: '297mm',
+          padding: '20px',
+>>>>>>> blackboxai-upload-all-changes
           fontFamily: 'Cairo, Tajawal, Tahoma, Arial, sans-serif',
           direction: 'rtl',
           fontSize: '13px',
           lineHeight: '1.4',
+<<<<<<< HEAD
           border: '1px solid #e5e7eb',
         }}
       >
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+=======
+          border: 'none',
+        }}
+      >
+<div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 print:absolute print:inset-0 print:z-[-1] print:opacity-[0.08] print:pointer-events-none watermark-print">
+>>>>>>> blackboxai-upload-all-changes
           <span 
             className="transform -rotate-45 whitespace-nowrap"
             style={{ 
@@ -121,7 +144,11 @@ export default function InvoicePrint(props: InvoiceProps) {
             </div>
 
             <div className="mb-6">
+<<<<<<< HEAD
               <table className="w-full border-collapse border border-gray-300">
+=======
+              <table className="w-full border-collapse border border-gray-300 print:table-fixed print:border-2 print:border-black/50">
+>>>>>>> blackboxai-upload-all-changes
                 <thead>
                   <tr className="bg-gray-50">
                     <th className="border border-gray-300 px-3 py-2 text-center font-bold">#</th>
@@ -180,7 +207,11 @@ export default function InvoicePrint(props: InvoiceProps) {
           </div>
         </div>
 
+<<<<<<< HEAD
         <div className="print:hidden absolute bottom-6 left-1/2 transform -translate-x-1/2">
+=======
+<div className="print:hidden absolute bottom-6 left-1/2 transform -translate-x-1/2 print:hidden !important">
+>>>>>>> blackboxai-upload-all-changes
           <button
             onClick={() => window.print()}
             className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold flex items-center gap-2 shadow-lg transition-colors"
@@ -194,6 +225,7 @@ export default function InvoicePrint(props: InvoiceProps) {
           @media print {
             @page {
               size: A4;
+<<<<<<< HEAD
               margin: 10mm;
             }
             body * {
@@ -214,6 +246,80 @@ export default function InvoicePrint(props: InvoiceProps) {
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
             }
+=======
+              margin: 1cm;
+            }
+            html, body {
+              margin: 0 !important;
+              padding: 0 !important;
+              height: 100vh !important;
+            }
+            body * {
+              visibility: hidden !important;
+            }
+            /* Hide UI elements */
+            .print\\:hidden, [class*=\"sidebar\"], [class*=\"BottomNav\"], [class*=\"header\"], nav {
+              display: none !important;
+              visibility: hidden !important;
+            }
+            .invoice-container,
+            .invoice-container * {
+              visibility: visible !important;
+            }
+            .invoice-container {
+              position: fixed !important;
+              top: 0 !important;
+              left: 0 !important;
+              right: 0 !important;
+              bottom: 0 !important;
+              width: 100% !important;
+              max-width: none !important;
+              height: auto !important;
+              min-height: 100vh !important;
+              margin: 0 !important;
+              padding: 20px !important;
+              box-shadow: none !important;
+              border: none !important;
+              overflow: visible !important;
+              max-height: none !important;
+              background: white !important;
+            }
+            /* Watermark */
+            .watermark-print {
+              z-index: -1 !important;
+              opacity: 0.08 !important;
+            }
+            .watermark-print span {
+              font-size: 6rem !important;
+              transform: rotate(-45deg) !important;
+            }
+            /* Table fixes */
+            table {
+              table-layout: fixed !important;
+              width: 100% !important;
+              border-collapse: collapse !important;
+            }
+            th:nth-child(1), td:nth-child(1) { width: 8% !important; }
+            th:nth-child(2), td:nth-child(2) { width: 45% !important; }
+            th:nth-child(3), td:nth-child(3) { width: 12% !important; }
+            th:nth-child(4), td:nth-child(4) { width: 12% !important; }
+            th:nth-child(5), td:nth-child(5) { width: 23% !important; }
+            th, td {
+              white-space: nowrap !important;
+              overflow: hidden !important;
+              text-overflow: ellipsis !important;
+              padding: 8px 4px !important;
+              border: 1px solid #333 !important;
+              font-size: 12pt !important;
+            }
+            /* Colors */
+            * {
+              -webkit-print-color-adjust: exact !important;
+              color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            .bg-gray-50 { background: #f9fafb !important; }
+>>>>>>> blackboxai-upload-all-changes
           }
         `}</style>
       </div>

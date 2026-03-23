@@ -96,8 +96,14 @@ export default function POSPage() {
         unit: item.unit || 'قطعة',
         price: Number(item.price) || 0,
         price_buy: Number(item.price_buy) || 0,
+<<<<<<< HEAD
         stock: parseInt(item.stock || item.quantity) || 0,
         min_quantity: parseInt(item.min_quantity) || 0,
+=======
+        stock: Number(item.stock) || 0,
+        min_stock: Number(item.min_stock || item.min_quantity || 0), // ✅ أضفنا الحقل المطلوب
+        min_quantity: Number(item.min_quantity || 0),
+>>>>>>> blackboxai-upload-all-changes
         created_at: item.created_at,
         updated_at: item.updated_at,
       }))
@@ -175,7 +181,11 @@ export default function POSPage() {
   // Stats from products
   const stats = useMemo(() => {
     const totalProducts = products.length
+<<<<<<< HEAD
     const lowStock = products.filter(p => (p.stock || 0) <= (p.min_quantity || 0)).length
+=======
+    const lowStock = products.filter(p => (p.stock || 0) <= (p.min_stock || 0)).length // ✅ استخدمنا min_stock لتطابق النوع
+>>>>>>> blackboxai-upload-all-changes
 
     return [
       {
@@ -243,6 +253,7 @@ export default function POSPage() {
   }
 
   // ✅ FIXED Auth guard - wait for store hydration
+<<<<<<< HEAD
   if (isClient && !isLoaded && !user) {
     const router = useRouter()
     const returnTo = encodeURIComponent(window.location.pathname)
@@ -250,6 +261,20 @@ export default function POSPage() {
     return null
   }
 
+=======
+  if (isClient && !user) {
+    const router = useRouter()
+    router.push('/login')
+    return null
+  }
+
+  if (isClient && user && isLoaded) {
+    const router = useRouter()
+    router.replace('/dashboard')
+    return <div>جاري التوجيه...</div>
+  }
+
+>>>>>>> blackboxai-upload-all-changes
   // Loading states
   if (storeLoading || isAuthLoading || !isReady) {
     return (

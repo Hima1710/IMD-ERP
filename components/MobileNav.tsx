@@ -3,7 +3,10 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+<<<<<<< HEAD
 import { supabase } from '@/lib/supabase'
+=======
+>>>>>>> blackboxai-upload-all-changes
 import { useStore } from '@/hooks/use-store'
 import {
   LayoutDashboard,
@@ -23,9 +26,15 @@ interface MobileNavProps {
 }
 
 export function MobileNav({ isOpen, onClose }: MobileNavProps) {
+<<<<<<< HEAD
   const router = useRouter()
   const pathname = usePathname()
   const { store: globalStore, user } = useStore()
+=======
+const router = useRouter()
+  const pathname = usePathname()
+  const { store: globalStore, user, signOut } = useStore()
+>>>>>>> blackboxai-upload-all-changes
   const [loggingOut, setLoggingOut] = useState(false)
   const [userLabel, setUserLabel] = useState<string>('')
 
@@ -39,6 +48,7 @@ export function MobileNav({ isOpen, onClose }: MobileNavProps) {
     }
   }, [user])
 
+<<<<<<< HEAD
   const handleLogout = async () => {
     if (!supabase) return
     setLoggingOut(true)
@@ -50,6 +60,10 @@ export function MobileNav({ isOpen, onClose }: MobileNavProps) {
     } finally {
       setLoggingOut(false)
     }
+=======
+  const handleLogout = () => {
+    signOut()
+>>>>>>> blackboxai-upload-all-changes
   }
 
   const handleLinkClick = () => {
@@ -75,7 +89,11 @@ export function MobileNav({ isOpen, onClose }: MobileNavProps) {
       />
       
       {/* Drawer */}
+<<<<<<< HEAD
       <div className="fixed top-0 left-0 bottom-0 w-72 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white z-50 md:hidden animate-slide-in-right">
+=======
+      <div className="fixed top-0 left-0 bottom-0 w-72 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white z-40 md:hidden animate-slide-in-right">
+>>>>>>> blackboxai-upload-all-changes
         {/* Header */}
         <div className="p-4 border-b border-slate-700 flex items-center justify-between">
           <div className="flex items-center gap-3">

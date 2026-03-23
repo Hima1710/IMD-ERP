@@ -1,55 +1,59 @@
 import { createBrowserClient, createServerClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
 
-// ============================================================
-// Supabase Clients - Next.js 14 SaaS Ready (Multi-tenancy)
-// ============================================================
+// 1. قراءة المفاتيح بأمان من كل المصادر الممكنة (لضمان العمل على Vercel)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || ''
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_KEY || ''
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+// 2. قيم احتياطية عشان الـ Build ميفشلش والصفحة متبقاش بيضاء
+// ملاحظة: لو شفت "placeholder" في الكونسول، يبقى المفاتيح مش مقروءة صح في Vercel
+const finalUrl = supabaseUrl || 'https://placeholder.supabase.co'
+const finalKey = supabaseAnonKey || 'placeholder'
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase env vars. Check .env.local')
-}
+// 3. تصدير الـ Client الأساسي (للتوافق مع الكود القديم والصفحات الحالية)
+export const supabase = createClient(finalUrl, finalKey)
 
-console.log('✅ [SUPABASE] SaaS Client Loaded:', supabaseUrl.slice(0, 30) + '...')
+// 4. Browser Client (الموصى به لنظام Next.js 14 في المتصفح)
+export const supabaseBrowser = createBrowserClient(finalUrl, finalKey)
 
-// Browser Client
-export const supabaseBrowser = createBrowserClient(supabaseUrl, supabaseAnonKey)
-
-// Server Client Factory
+// 5. Server Client (للعمليات اللي بتتم جوه الـ Server Actions أو API Routes)
 export function supabaseServer(cookies: any) {
-  return createServerClient(supabaseUrl, supabaseAnonKey, {
+  return createServerClient(finalUrl, finalKey, {
     cookies: {
       getAll() {
         return cookies.getAll()
       },
-      setAll(cookiesToSet: { name: string; value: string; options?: any }[]) {
+      setAll(cookiesToSet: any[]) {
         cookiesToSet.forEach(({ name, value, options }) => cookies.set(name, value, options))
       },
     },
   })
 }
 
-// SaaS Multi-Tenancy Helper - Filter queries by store_id
+/**
+ * 6. مساعدات نظام المحلات (SaaS Helpers) 
+ * تُستخدم لفلترة البيانات بناءً على معرف المحل (shop_id)
+ */
 export function withStoreFilter(table: string, storeId: string | null) {
   if (!storeId) {
-    console.warn('⚠️ No store_id provided for SaaS filter')
+    console.warn(`⚠️ No shop_id provided for filtering table: ${table}`)
     return (query: any) => query
   }
-  
-  return (query: any) => query.eq('store_id', storeId)
+  return (query: any) => query.eq('shop_id', storeId)
 }
 
-// SaaS Auth Helper - Get current store_id from user metadata
-export async function getCurrentStoreId(supabase: any) {
-  const { data: { user } } = await supabase.auth.getUser()
-  return user?.user_metadata?.store_id || null
+/**
+ * جلب معرف المحل (shop_id) الخاص بالمستخدم الحالي من الـ Metadata
+ */
+export async function getCurrentStoreId(supabaseClient: any) {
+  const { data: { user }, error } = await supabaseClient.auth.getUser()
+  if (error || !user) return null
+  return user?.user_metadata?.shop_id || null
 }
 
-// Export for compatibility
-export { supabaseUrl, supabaseAnonKey }
-export { createBrowserClient, createServerClient } from '@supabase/ssr'
-
-// Backward compatibility
-export const supabase = supabaseBrowser
-
+// 7. كود للفحص يظهر في كونسول المتصفح فقط للتأكد من الربط
+if (typeof window !== 'undefined' && (finalUrl.includes('placeholder') || !supabaseUrl)) {
+  console.warn("⚠️ تنبيه: مفاتيح Supabase غير مقروءة! تأكد من إعدادات Environment Variables في Vercel.");
+} else if (typeof window !== 'undefined') {
+  console.log("✅ [SUPABASE] Client Initialized Successfully");
+}

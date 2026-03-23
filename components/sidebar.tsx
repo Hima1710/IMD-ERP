@@ -3,7 +3,10 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
+<<<<<<< HEAD
 import { supabase } from '@/lib/supabase'
+=======
+>>>>>>> blackboxai-upload-all-changes
 import { useStore } from '@/hooks/use-store'
 import {
   LayoutDashboard,
@@ -22,6 +25,7 @@ interface SidebarProps {
 
 export function Sidebar({ selectedStore = 'settings', onStoreChange }: SidebarProps) {
 const router = useRouter()
+<<<<<<< HEAD
   const { store: globalStore, user } = useStore()
   const [loggingOut, setLoggingOut] = useState(false)
   const [userLabel, setUserLabel] = useState<string>('')
@@ -29,6 +33,13 @@ const router = useRouter()
   // Load user label from centralized user
   useEffect(() => {
     // اليوزر موجود في الستور أصلاً بفضل الـ AuthInitializer
+=======
+  const { store: globalStore, user, signOut } = useStore()
+  const [loggingOut, setLoggingOut] = useState(false)
+  const [userLabel, setUserLabel] = useState('')
+
+  useEffect(() => {
+>>>>>>> blackboxai-upload-all-changes
     const currentUser = user 
     if (currentUser) {
       const raw = currentUser.email || currentUser.phone || ''
@@ -37,6 +48,7 @@ const router = useRouter()
     }
   }, [user])
 
+<<<<<<< HEAD
   const handleLogout = async () => {
     if (!supabase) return
     setLoggingOut(true)
@@ -52,6 +64,14 @@ const router = useRouter()
 
   return (
 <div className="w-72 h-screen sticky top-0 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white flex flex-col shadow-lg justify-between">
+=======
+  const handleLogout = () => {
+    signOut()
+  }
+
+  return (
+<div className="w-72 h-screen sticky top-0 z-40 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white flex flex-col shadow-lg justify-between">
+>>>>>>> blackboxai-upload-all-changes
       {/* Logo/Brand */}
       <div className="p-6 border-b border-slate-700">
         <div className="flex items-center gap-3 mb-4">
@@ -63,20 +83,50 @@ const router = useRouter()
             )}
           </div>
           <div>
+<<<<<<< HEAD
             <h1 className="text-xl font-bold text-white">{globalStore.name || 'IMD ERP'}</h1>
             <p className="text-xs text-slate-400">نظام إدارة المستودع</p>
           </div>
         </div>
         <p className="text-xs text-slate-500">By Eng. Ibrahim Mabrouk El-Deeb</p>
+=======
+            <h1 className="text-xl font-bold text-white">IMD ERP</h1>
+            <p className="text-xs text-slate-400">نظام اداره محلاتك</p>
+          </div>
+        </div>
+>>>>>>> blackboxai-upload-all-changes
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 px-2 py-6 space-y-2 overflow-y-auto">
+<<<<<<< HEAD
         <NavLink href="/" icon={<LayoutDashboard className="w-5 h-5" />} label="لوحة التحكم" />
         <NavLink href="/products" icon={<Package className="w-5 h-5" />} label="المنتجات" />
         <NavLink href="/reports" icon={<BarChart3 className="w-5 h-5" />} label="التقارير" />
         <NavLink href="/customers" icon={<Users className="w-5 h-5" />} label="العملاء" />
         <NavLink href="/settings" icon={<Settings className="w-5 h-5" />} label="الإعدادات" />
+=======
+        <Link href="/" className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-right bg-blue-600 text-white">
+          <span><LayoutDashboard className="w-5 h-5" /></span>
+          <span className="flex-1 text-sm font-medium">لوحة التحكم</span>
+        </Link>
+        <Link href="/products" className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-right text-slate-300 hover:bg-slate-700">
+          <span><Package className="w-5 h-5" /></span>
+          <span className="flex-1 text-sm font-medium">المنتجات</span>
+        </Link>
+        <Link href="/reports" className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-right text-slate-300 hover:bg-slate-700">
+          <span><BarChart3 className="w-5 h-5" /></span>
+          <span className="flex-1 text-sm font-medium">التقارير</span>
+        </Link>
+        <Link href="/customers" className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-right text-slate-300 hover:bg-slate-700">
+          <span><Users className="w-5 h-5" /></span>
+          <span className="flex-1 text-sm font-medium">العملاء</span>
+        </Link>
+        <Link href="/settings" className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-right text-slate-300 hover:bg-slate-700">
+          <span><Settings className="w-5 h-5" /></span>
+          <span className="flex-1 text-sm font-medium">الإعدادات</span>
+        </Link>
+>>>>>>> blackboxai-upload-all-changes
       </nav>
 
       {/* Footer */}
@@ -112,6 +162,7 @@ const router = useRouter()
     </div>
   )
 }
+<<<<<<< HEAD
 
 interface NavLinkProps {
   href: string
@@ -134,3 +185,5 @@ function NavLink({ href, icon, label }: NavLinkProps) {
     </Link>
   )
 }
+=======
+>>>>>>> blackboxai-upload-all-changes

@@ -96,6 +96,7 @@ export function POSHeader({ searchTerm, onSearchChange, selectedStore }: POSHead
     }
   }
 
+<<<<<<< HEAD
   const handleLogout = async () => {
     if (!supabase) {
       router.push('/login')
@@ -112,6 +113,11 @@ export function POSHeader({ searchTerm, onSearchChange, selectedStore }: POSHead
     } finally {
       setLoggingOut(false)
     }
+=======
+const { signOut } = useStore()
+  const handleLogout = () => {
+    signOut()
+>>>>>>> blackboxai-upload-all-changes
   }
 
   const currentTime = new Date().toLocaleTimeString('ar-SA', {

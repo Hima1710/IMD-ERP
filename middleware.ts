@@ -8,9 +8,25 @@ export async function middleware(request: NextRequest) {
     },
   })
 
+<<<<<<< HEAD
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+=======
+  // جلب المفاتيح بأمان من كل الاحتمالات
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_KEY
+
+  // لو المفاتيح مش موجودة، كمل الطلب عادي عشان ميعملش 500 Error
+  if (!supabaseUrl || !supabaseKey) {
+    console.error("Middleware: Missing Supabase Env Vars")
+    return response
+  }
+
+  const supabase = createServerClient(
+    supabaseUrl,
+    supabaseKey,
+>>>>>>> blackboxai-upload-all-changes
     {
       cookies: {
         get(name: string) {
@@ -19,18 +35,26 @@ export async function middleware(request: NextRequest) {
         set(name: string, value: string, options: CookieOptions) {
           request.cookies.set({ name, value, ...options })
           response = NextResponse.next({
+<<<<<<< HEAD
             request: {
               headers: request.headers,
             },
+=======
+            request: { headers: request.headers },
+>>>>>>> blackboxai-upload-all-changes
           })
           response.cookies.set({ name, value, ...options })
         },
         remove(name: string, options: CookieOptions) {
           request.cookies.set({ name, value: '', ...options })
           response = NextResponse.next({
+<<<<<<< HEAD
             request: {
               headers: request.headers,
             },
+=======
+            request: { headers: request.headers },
+>>>>>>> blackboxai-upload-all-changes
           })
           response.cookies.set({ name, value: '', ...options })
         },
@@ -38,6 +62,7 @@ export async function middleware(request: NextRequest) {
     }
   )
 
+<<<<<<< HEAD
   // التاكد من اليوزر
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -54,12 +79,17 @@ export async function middleware(request: NextRequest) {
     url.pathname = '/'
     return NextResponse.redirect(url)
   }
+=======
+  // تجديد الجلسة (Session)
+  await supabase.auth.getUser()
+>>>>>>> blackboxai-upload-all-changes
 
   return response
 }
 
 export const config = {
   matcher: [
+<<<<<<< HEAD
     /*
      * Match all request paths except static files
      */
@@ -67,3 +97,8 @@ export const config = {
   ],
 }
 
+=======
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
+}
+>>>>>>> blackboxai-upload-all-changes

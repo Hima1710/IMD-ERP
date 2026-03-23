@@ -31,6 +31,7 @@ export default function CompactInvoice({ onClose, items = [], total = 0, date = 
     <>
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
+<<<<<<< HEAD
           body * { visibility: hidden; }
           .compact-invoice, .compact-invoice * { visibility: visible; }
           .compact-invoice { 
@@ -43,6 +44,30 @@ export default function CompactInvoice({ onClose, items = [], total = 0, date = 
       
       <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 no-print">
         <div className="max-w-[320px] w-full bg-white rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto print:shadow-none border">
+=======
+          @page { size: 80mm 200mm; margin: 2mm; }
+          html, body { margin: 0 !important; padding: 0 !important; height: 100vh !important; }
+          body * { visibility: hidden !important; }
+          button, [class*='sidebar'], [class*='BottomNav'], nav { display: none !important; }
+          .compact-invoice, .compact-invoice * { visibility: visible !important; }
+          .compact-invoice { 
+            position: fixed !important; 
+            left: 0 !important; top: 0 !important; right: 0 !important; bottom: 0 !important;
+            width: 80mm !important; max-width: 80mm !important;
+            margin: 0 !important; padding: 4mm !important;
+            box-shadow: none !important; border: 1px solid #333 !important;
+            overflow: visible !important; max-height: none !important;
+            background: white !important; font-size: 10pt !important;
+            direction: rtl !important;
+          }
+          .compact-invoice * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+          .no-print, .print\\:hidden { display: none !important; }
+        }
+      ` }} />
+      
+<div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 no-print print:hidden" dir="rtl">
+        <div className="compact-invoice max-w-[320px] w-full bg-white rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto print:shadow-none print:w-[80mm] print:m-0 print:p-4 print:border print:rounded-none print:max-h-none print:overflow-visible border">
+>>>>>>> blackboxai-upload-all-changes
           {/* Header */}
           <div className="p-2 border-b border-slate-200 text-xs font-bold text-center uppercase tracking-wide">
             {storeName}
@@ -99,7 +124,11 @@ export default function CompactInvoice({ onClose, items = [], total = 0, date = 
           </div>
 
           {/* Footer Actions */}
+<<<<<<< HEAD
           <div className="p-2 border-t bg-slate-50 flex gap-2 no-print">
+=======
+          <div className="p-2 border-t bg-slate-50 flex gap-2 no-print print:hidden">
+>>>>>>> blackboxai-upload-all-changes
             <button 
               onClick={handlePrint}
               className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-1.5 px-3 rounded text-xs font-medium flex items-center justify-center gap-1 transition-colors"
