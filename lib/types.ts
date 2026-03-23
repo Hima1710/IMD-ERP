@@ -1,15 +1,3 @@
-<<<<<<< HEAD
-// Simple Product type that matches Supabase schema
-export interface Product {
-  id: string
-  name: string
-  category: string
-  unit: string
-  price: number       // Selling price (سعر البيع)
-  price_buy: number   // Cost price (سعر التكلفة)
-  stock: number
-  min_quantity: number
-=======
 // Product type - Schema synced (min_stock)
 export type Product = {
   id: string
@@ -20,35 +8,19 @@ export type Product = {
   price_buy: number
   stock: number
   min_stock: number
->>>>>>> blackboxai-upload-all-changes
   image_url?: string
   shop_id?: string
   created_at?: string
   updated_at?: string
 }
 
-<<<<<<< HEAD
-// For UI display - add computed properties
-export interface ProductUI extends Omit<Product, 'stock' | 'name'> {
-=======
 // UI Product with computed props
 export type ProductUI = Omit<Product, 'stock'> & {
->>>>>>> blackboxai-upload-all-changes
   quantity: number
   in_stock: boolean
   name_ar: string
 }
 
-<<<<<<< HEAD
-export type ProductFormData = Omit<Product, 'id' | 'created_at' | 'updated_at'>
-
-// Convert DB product to UI product
-export function toProductUI(p: Product): ProductUI {
-  return {
-    ...p,
-    price: Number(p.price) || 0,  // Use 'price' from database as selling price
-    quantity: p.stock,
-=======
 export type ProductFormData = Omit<Product, 'id' | 'created_at' | 'updated_at'> & { min_quantity?: number }
 
 export function toProductUI(p: Product): ProductUI {
@@ -56,27 +28,11 @@ export function toProductUI(p: Product): ProductUI {
     ...p,
     price: Number(p.price) || 0,
     quantity: Number(p.stock),
->>>>>>> blackboxai-upload-all-changes
     in_stock: p.stock > 0,
     name_ar: p.name,
   }
 }
 
-<<<<<<< HEAD
-export interface Customer {
-  id: string
-  name: string
-  name_ar: string
-  email?: string
-  phone?: string
-  address?: string
-  total_purchases: number
-  created_at?: string
-  updated_at?: string
-}
-
-export interface Sale {
-=======
 // ERP Entity (Customer or Supplier)
 export type AccountEntity = {
   id: string
@@ -131,7 +87,6 @@ export type Customer = AccountEntity & { type: 'customer'; total_purchases?: num
 
 // Sale (legacy - use account_ledger for new accounting)
 export type Sale = {
->>>>>>> blackboxai-upload-all-changes
   id: string
   product_id: string
   product_name: string
@@ -143,8 +98,6 @@ export type Sale = {
   created_at?: string
 }
 
-<<<<<<< HEAD
-=======
 // Account Ledger Entry
 export type AccountLedgerEntry = {
   id: string
@@ -161,4 +114,3 @@ export type CustomerStats = {
   open_invoices: number
   avg_payment_days: number
 }
->>>>>>> blackboxai-upload-all-changes
