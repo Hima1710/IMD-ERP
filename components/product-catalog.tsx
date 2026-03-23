@@ -36,6 +36,7 @@ export function ProductCatalog({
     price_buy: 0,
     price: 0,
     stock: 0,
+    min_stock: 10,
     min_quantity: 10,
   })
 
@@ -56,6 +57,7 @@ export function ProductCatalog({
           price_buy: 0,
           price: 0,
           stock: 0,
+          min_stock: 10,
           min_quantity: 10,
         })
       }

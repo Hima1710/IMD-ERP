@@ -21,7 +21,7 @@ export type ProductUI = Omit<Product, 'stock'> & {
   name_ar: string
 }
 
-export type ProductFormData = Omit<Product, 'id' | 'created_at' | 'updated_at'>
+export type ProductFormData = Omit<Product, 'id' | 'created_at' | 'updated_at'> & { min_quantity?: number }
 
 export function toProductUI(p: Product): ProductUI {
   return {

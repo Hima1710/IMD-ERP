@@ -96,8 +96,9 @@ export default function POSPage() {
         unit: item.unit || 'قطعة',
         price: Number(item.price) || 0,
         price_buy: Number(item.price_buy) || 0,
-        stock: parseInt(item.stock || item.quantity) || 0,
-        min_quantity: parseInt(item.min_quantity) || 0,
+        stock: Number(item.stock) || 0,
+        min_stock: Number(item.min_stock || item.min_quantity || 0), // ✅ أضفنا الحقل المطلوب
+        min_quantity: Number(item.min_quantity || 0),
         created_at: item.created_at,
         updated_at: item.updated_at,
       }))
